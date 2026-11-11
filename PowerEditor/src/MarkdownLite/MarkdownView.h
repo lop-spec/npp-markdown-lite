@@ -2,6 +2,7 @@
 #pragma once
 #include "MarkdownCore.h"
 #include "MenuIds.h"
+#include "MarkdownLexer.h"
 #include <windows.h>
 #include <Scintilla.h>
 #include <SciLexer.h>
@@ -31,13 +32,14 @@ template<class View> inline const char* eol(View& view)
 }
 template<class View> inline void applyStyles(View& view, bool dark, bool rich)
 {
-	view.execute(SCI_SETILEXER, 0, reinterpret_cast<LPARAM>(CreateLexer("markdown")));
+	view.execute(SCI_SETILEXER, 0, reinterpret_cast<LPARAM>(createLexer()));
+	view.execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("lexer.markdown.header.eolfill"), reinterpret_cast<LPARAM>("1"));
 	const COLORREF ink = dark ? RGB(214, 218, 225) : RGB(40, 46, 55);
 	const COLORREF paper = dark ? RGB(30, 33, 39) : RGB(250, 250, 249);
 	const COLORREF accent = dark ? RGB(131, 184, 245) : RGB(37, 88, 154);
 	const COLORREF muted = dark ? RGB(158, 170, 185) : RGB(102, 116, 130);
 	const COLORREF codePaper = dark ? RGB(40, 45, 53) : RGB(235, 238, 242);
-	for (int style = 0; style <= SCE_MARKDOWN_FRONT_KEY; ++style)
+	for (int style = 0; style <= fenceStyle; ++style)
 	{
 		view.execute(SCI_STYLESETFORE, style, ink);
 		view.execute(SCI_STYLESETBACK, style, paper);
@@ -48,6 +50,7 @@ template<class View> inline void applyStyles(View& view, bool dark, bool rich)
 		view.execute(SCI_STYLESETUNDERLINE, style, false);
 		view.execute(SCI_STYLESETEOLFILLED, style, false);
 	}
+	view.execute(SCI_SETCARETFORE, ink);
 	view.execute(SCI_STYLESETFORE, STYLE_DEFAULT, ink);
 	view.execute(SCI_STYLESETBACK, STYLE_DEFAULT, paper);
 	view.execute(SCI_SETEXTRAASCENT, rich ? 3 : 0);
@@ -63,12 +66,13 @@ template<class View> inline void applyStyles(View& view, bool dark, bool rich)
 		}
 		for (int style : { SCE_MARKDOWN_STRONG1, SCE_MARKDOWN_STRONG2 }) view.execute(SCI_STYLESETBOLD, style, true);
 		for (int style : { SCE_MARKDOWN_EM1, SCE_MARKDOWN_EM2, SCE_MARKDOWN_BLOCKQUOTE }) view.execute(SCI_STYLESETITALIC, style, true);
-		for (int style : { SCE_MARKDOWN_CODE, SCE_MARKDOWN_CODE2, SCE_MARKDOWN_CODEBK, SCE_MARKDOWN_FRONT })
+		for (int style : { SCE_MARKDOWN_CODE, SCE_MARKDOWN_CODE2, SCE_MARKDOWN_CODEBK, SCE_MARKDOWN_FRONT, fenceStyle })
 		{
 			view.execute(SCI_STYLESETBACK, style, codePaper);
 			view.execute(SCI_STYLESETSIZE, style, 12);
 		}
 		view.execute(SCI_STYLESETEOLFILLED, SCE_MARKDOWN_CODEBK, true);
+		view.execute(SCI_STYLESETEOLFILLED, fenceStyle, true);
 		view.execute(SCI_STYLESETEOLFILLED, SCE_MARKDOWN_FRONT, true);
 		for (int style : { SCE_MARKDOWN_PRECHAR, SCE_MARKDOWN_BLOCKQUOTE, SCE_MARKDOWN_HRULE, SCE_MARKDOWN_FRONT_MARK }) view.execute(SCI_STYLESETFORE, style, muted);
 		for (int style : { SCE_MARKDOWN_LINK, SCE_MARKDOWN_ULIST_ITEM, SCE_MARKDOWN_OLIST_ITEM, SCE_MARKDOWN_FRONT_KEY }) view.execute(SCI_STYLESETFORE, style, accent);
@@ -79,7 +83,7 @@ template<class View> inline void applyStyles(View& view, bool dark, bool rich)
 template<class View> inline bool inCode(View& view, intptr_t position)
 {
 	const auto style = view.execute(SCI_GETSTYLEAT, position);
-	return style == SCE_MARKDOWN_CODE || style == SCE_MARKDOWN_CODE2 || style == SCE_MARKDOWN_CODEBK || style == SCE_MARKDOWN_FRONT;
+	return style == SCE_MARKDOWN_CODE || style == SCE_MARKDOWN_CODE2 || style == SCE_MARKDOWN_CODEBK || style == SCE_MARKDOWN_FRONT || style == fenceStyle;
 }
 template<class View> inline bool continueLine(View& view, int ch)
 {

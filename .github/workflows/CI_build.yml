@@ -17,7 +17,16 @@ jobs:
         shell: cmd
         run: tests\build-probes.cmd
       - name: Real Windows editor integration tests
-        run: python tests/windows-smoke.py PowerEditor/bin64/notepad++.exe test-output
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP official-notepad.zip
+          curl.exe -fsSL --retry 2 https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.9/npp.8.9.9.portable.x64.zip -o $archive
+          if ($LASTEXITCODE -ne 0) { throw 'Official plugin download failed' }
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLower() -ne '96a8216930f5316ed5961663b2cc92a62ec7d303b6c3077b92a7cfc38a8761b7') { throw 'Official plugin archive hash mismatch' }
+          tar.exe -xf $archive -C PowerEditor/bin64 plugins/mimeTools/mimeTools.dll
+          if ($LASTEXITCODE -ne 0) { throw 'Official plugin extraction failed' }
+          $env:LITE_OFFICIAL_PLUGIN = '1'
+          python tests/windows-smoke.py PowerEditor/bin64/notepad++.exe test-output
       - name: Size gate and release evidence
         shell: pwsh
         run: |
