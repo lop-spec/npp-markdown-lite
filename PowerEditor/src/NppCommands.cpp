@@ -65,7 +65,6 @@
 #include "dpiManagerV2.h"
 #include "fileBrowser.h"
 #include "functionListPanel.h"
-#include "hmac.h"
 #include "localization.h"
 #include "md5.h"
 #include "md5Dlgs.h"
