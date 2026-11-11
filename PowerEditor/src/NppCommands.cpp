@@ -38,6 +38,7 @@
 #include "FindReplaceDlg.h"
 #include "Notepad_plus.h"
 #include "Notepad_plus_Window.h"
+#include "MarkdownLite/MarkdownView.h"
 #include "Notepad_plus_msgs.h"
 #include "NppConstants.h"
 #include "NppDarkMode.h"
@@ -157,6 +158,23 @@ void Notepad_plus::macroPlayback(Macro macro, std::vector<Document>* pDocs4EndUA
 
 void Notepad_plus::command(int id)
 {
+	if (id == IDM_MD_NEW)
+	{
+		fileNew();
+		_pEditView->getCurrentBuffer()->setMarkdownForced(true);
+		_pEditView->defineDocType(L_TEXT);
+		return;
+	}
+	if (id == IDM_MD_MODE || id == IDM_MD_RICH)
+	{
+		Buffer* buffer = _pEditView->getCurrentBuffer();
+		if (id == IDM_MD_MODE) buffer->setMarkdownForced(!buffer->isMarkdownDocument());
+		else buffer->setMarkdownRich(!buffer->markdownRich());
+		_pEditView->defineDocType(buffer->getLangType());
+		return;
+	}
+	if (_pEditView->getCurrentBuffer()->isMarkdownDocument() && MarkdownLite::editCommand(*_pEditView, id)) return;
+	if ((id >= IDM_MD_NEW && id <= IDM_MD_NEXT) || (id >= ID_MACRO && id < ID_MACRO_LIMIT) || (id >= ID_USER_CMD && id < ID_USER_CMD_LIMIT) || id == IDC_EDIT_TOGGLEMACRORECORDING) return;
 	switch (id)
 	{
 		case IDM_FILE_NEW:
@@ -1441,6 +1459,7 @@ void Notepad_plus::command(int id)
 			_pEditView->execute(WM_CLEAR);
 			break;
 
+#if 0 // Removed from Lite: macro recording and playback.
 		case IDM_MACRO_STARTRECORDINGMACRO:
 		case IDM_MACRO_STOPRECORDINGMACRO:
 		case IDC_EDIT_TOGGLEMACRORECORDING:
@@ -1507,6 +1526,7 @@ void Notepad_plus::command(int id)
 			}
 			break;
 		}
+#endif
 		case IDM_EDIT_FULLPATHTOCLIP :
 		case IDM_EDIT_CURRENTDIRTOCLIP :
 		case IDM_EDIT_FILENAMETOCLIP :
@@ -2945,6 +2965,7 @@ void Notepad_plus::command(int id)
 			break;
 		}
 
+#if 0 // Removed from Lite: external Run commands.
 		case IDM_EXECUTE:
 		{
 			bool isFirstTime = !_runDlg.isCreated();
@@ -2971,6 +2992,7 @@ void Notepad_plus::command(int id)
 			break;
 		}
 
+#endif
 		case IDM_FORMAT_TODOS:
 		case IDM_FORMAT_TOUNIX:
 		case IDM_FORMAT_TOMAC:
@@ -3577,6 +3599,7 @@ void Notepad_plus::command(int id)
 			break;
 		}
 
+#if 0 // Removed from Lite: hash tool UI / commands.
 		case IDM_TOOL_MD5_GENERATE:
 		{
 			bool isFirstTime = !_md5FromTextDlg.isCreated();
@@ -3732,6 +3755,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#endif
 		case IDM_DEBUGINFO:
 		{
 			const bool isFirstTime = !_debugInfoDlg.isCreated();
@@ -4327,6 +4351,7 @@ void Notepad_plus::command(int id)
 					_pDocMap->setSyntaxHiliting();
 				}
 			}
+#if 0 // Removed even when an old shortcuts.xml is imported.
 			else if (((id >= ID_MACRO) && (id < ID_MACRO_LIMIT)) || ((id >= ID_USER_CMD) && (id < ID_USER_CMD_LIMIT))) // shortcuts.xml commands
 			{
 				//-- shortcuts.xml security validation --//
@@ -4396,6 +4421,7 @@ void Notepad_plus::command(int id)
 					cmd.run(_pPublicInterface->getHSelf());
 				}
 			}
+#endif
 			else if ((id >= ID_PLUGINS_CMD) && (id < ID_PLUGINS_CMD_LIMIT))
 			{
 				int i = id - ID_PLUGINS_CMD;

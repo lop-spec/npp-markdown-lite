@@ -19,7 +19,7 @@
 
 //************ Notepad++ version **************************
 
-#define NOTEPAD_PLUS_VERSION L"Notepad++ v8.9.9"
+#define NOTEPAD_PLUS_VERSION L"Npp Markdown Lite 1.0.0 (Notepad++ 8.9.9)"
 
 // should be X.Y : ie. if VERSION_DIGITALVALUE == 4, 7, 1, 0 , then X = 4, Y = 71
 // ex : #define VERSION_VALUE L"5.63\0"
@@ -794,10 +794,11 @@
 #define MENUINDEX_FORMAT   4
 #define MENUINDEX_LANGUAGE 5
 #define MENUINDEX_SETTINGS 6
-#define MENUINDEX_TOOLS    7
-#define MENUINDEX_MACRO    8
-#define MENUINDEX_RUN      9
-#define MENUINDEX_PLUGINS  10
-#define MENUINDEX_WINDOW   11
-#define MENUINDEX_HELP     12
-#define MENUINDEX_LIST     14
+#define MENUINDEX_TOOLS    (-1)
+#define MENUINDEX_MACRO    (-1)
+#define MENUINDEX_RUN      (-1)
+#define MENUINDEX_MARKDOWN 7
+#define MENUINDEX_PLUGINS  8
+#define MENUINDEX_WINDOW   9
+#define MENUINDEX_HELP     10
+#define MENUINDEX_LIST     12

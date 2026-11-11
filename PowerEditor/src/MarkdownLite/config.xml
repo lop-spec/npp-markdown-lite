@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NotepadPlus>
+    <GUIConfigs>
+        <GUIConfig name="ToolBar" visible="yes">small</GUIConfig>
+        <GUIConfig name="StatusBar">show</GUIConfig>
+        <GUIConfig name="RememberLastSession">yes</GUIConfig>
+        <GUIConfig name="noUpdate">yes</GUIConfig>
+        <GUIConfig name="NewDocDefaultSettings" format="0" encoding="4" lang="0" codepage="-1" openAnsiAsUTF8="yes" />
+        <GUIConfig name="auto-completion" autoCAction="0" funcParams="no" />
+        <GUIConfig name="AppPosition" x="100" y="100" width="1100" height="760" isMaximized="no" />
+        <GUIConfig name="ScintillaPrimaryView" lineNumberMargin="show" bookMarkMargin="show" indentGuideLine="show" folderMarkStyle="box" Wrap="no" />
+    </GUIConfigs>
+</NotepadPlus>

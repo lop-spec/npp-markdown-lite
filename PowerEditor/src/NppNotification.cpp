@@ -17,6 +17,7 @@
 
 #include "localization.h"
 #include "Notepad_plus_Window.h"
+#include "MarkdownLite/MarkdownView.h"
 #include "functionListPanel.h"
 #include "xmlMatchedTagsHighlighter.h"
 #include "VerticalFileSwitcher.h"
@@ -210,7 +211,8 @@ BOOL Notepad_plus::notify(SCNotification *notification)
 			if (!_recordingMacro && !_playingBackMacro) // No macro recording or playing back
 			{
 				const NppGUI& nppGui = NppParameters::getInstance().getNppGUI();
-				if (nppGui._maintainIndent != autoIndent_none)
+				const bool markdownHandled = notifyView->getCurrentBuffer()->isMarkdownDocument() && MarkdownLite::continueLine(*notifyView, notification->ch);
+				if (!markdownHandled && nppGui._maintainIndent != autoIndent_none)
 					maintainIndentation(static_cast<wchar_t>(notification->ch));
 
 				Buffer* currentBuf = _pEditView->getCurrentBuffer();
@@ -444,6 +446,8 @@ BOOL Notepad_plus::notify(SCNotification *notification)
 			NppGUI& nppGui = nppParam.getNppGUI();
 
 			Buffer* currentBuf = notifyView->getCurrentBuffer();
+			checkMenuItem(IDM_MD_MODE, currentBuf->isMarkdownDocument());
+			checkMenuItem(IDM_MD_RICH, currentBuf->isMarkdownDocument() && currentBuf->markdownRich());
 			
 			// replacement for obsolete custom SCN_SCROLLED
 			if (notification->updated & SC_UPDATE_V_SCROLL)

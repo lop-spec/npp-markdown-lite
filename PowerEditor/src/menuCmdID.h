@@ -80,7 +80,7 @@
 //20  Print Now
 //21  --------
 //22  Exit
-    #define    IDM_FILEMENU_EXISTCMDPOSITION    22
+    #define    IDM_FILEMENU_EXISTCMDPOSITION    15
 
 
 #define    IDM_EDIT       (IDM + 2000)

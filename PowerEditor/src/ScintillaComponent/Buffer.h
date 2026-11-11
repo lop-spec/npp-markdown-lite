@@ -19,6 +19,7 @@
 #include <mutex>
 #include <cstdio>
 #include "Utf8_16.h"
+#include "MarkdownLite/MarkdownCore.h"
 
 
 class Notepad_plus;
@@ -261,6 +262,11 @@ public:
 		doNotify(BufferChangeFormat);
 	}
 
+	bool isMarkdownDocument() const { return _markdownForced >= 0 ? _markdownForced != 0 : MarkdownLite::isMarkdown(getFileName()); }
+	void setMarkdownForced(bool value) { _markdownForced = value ? 1 : 0; }
+	bool markdownRich() const { return _markdownRich; }
+	void setMarkdownRich(bool value) { _markdownRich = value; }
+
 	LangType getLangType() const { return _lang; }
 
 	void setLangType(LangType lang, const wchar_t * userLangName = L"");
@@ -455,6 +461,8 @@ private:
 	//document properties
 	Document _doc;	//invariable
 	LangType _lang = L_TEXT;
+	int _markdownForced = -1;
+	bool _markdownRich = true;
 	std::wstring _userLangExt; // it's useful if only (_lang == L_USER)
 	bool _isDirty = false;
 	EolType _eolFormat = EolType::osdefault;

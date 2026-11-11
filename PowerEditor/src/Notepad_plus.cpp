@@ -105,6 +105,8 @@ enum tb_stat {tb_saved, tb_unsaved, tb_ro, tb_monitored};
 #define DIR_LEFT true
 #define DIR_RIGHT false
 
+#include "MarkdownLite/Toolbar.h"
+#if 0 // Legacy toolbar is excluded from the Lite binary.
 static constexpr int IDI_SEPARATOR_ICON = -1;
 
 static constexpr ToolBarButtonUnit toolBarIcons[]{
@@ -184,6 +186,8 @@ static constexpr ToolBarButtonUnit toolBarIcons[]{
 };
 
 
+
+#endif
 
 Notepad_plus::Notepad_plus()
 	: _autoCompleteMain(&_mainEditView)
@@ -276,10 +280,7 @@ LRESULT Notepad_plus::init(HWND hwnd)
 
 	// Menu
 	_mainMenuHandle = ::GetMenu(hwnd);
-	int langPos2BeRemoved = MENUINDEX_LANGUAGE + 1;
-	if (nppGUI._isLangMenuCompact)
-		langPos2BeRemoved = MENUINDEX_LANGUAGE;
-	::RemoveMenu(_mainMenuHandle, langPos2BeRemoved, MF_BYPOSITION);
+	// Lite has one curated language menu, not the two alternate upstream menus.
 
 	//Views
 	_pDocTab = &_mainDocTab;
@@ -548,6 +549,7 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	nppParam.initFindDlgStatusMsgCustomColors();
 	setupColorSampleBitmapsOnMainMenuItems();
 
+#if 0 // Macro / Run menus are not part of the Lite build.
 	// Macro Menu
 	HMENU hMacroMenu = ::GetSubMenu(_mainMenuHandle, MENUINDEX_MACRO);
 	size_t const macroPosBase = 6;
@@ -569,6 +571,7 @@ LRESULT Notepad_plus::init(HWND hwnd)
 
 	runMenuItems.attach(hRunMenu, runPosBase, IDM_SETTING_SHORTCUT_MAPPER_RUN, L"Modify Shortcut/Delete Command...");
 
+#endif
 	// Updater menu item
 	if (!nppGUI._doesExistUpdater || nppParam.isNppAutoUpdateDisabled())
 	{

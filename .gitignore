@@ -166,3 +166,12 @@ PowerEditor/src/MISC/md5/RCa06792
 *.db
 *.sln
 *.opendb
+
+# Markdown Lite: local-only / generated verification files
+.scratch/
+test-output*/
+dist/
+**/__pycache__/
+*.exp
+*.dll
+*.lib

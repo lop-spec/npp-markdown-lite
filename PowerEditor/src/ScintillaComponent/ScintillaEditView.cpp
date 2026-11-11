@@ -16,6 +16,7 @@
 
 
 #include "ScintillaEditView.h"
+#include "MarkdownLite/MarkdownView.h"
 
 #include <windows.h>
 
@@ -1752,6 +1753,14 @@ void ScintillaEditView::setNpcAndCcUniEOL(long color) const
 
 void ScintillaEditView::defineDocType(LangType typeDoc)
 {
+	const bool markdown = _isMainEditZone && _currentBuffer && _currentBuffer->isMarkdownDocument();
+	if (_markdownActive && !markdown)
+	{
+		execute(SCI_SETWRAPMODE, _markdownSavedWrap);
+		execute(SCI_SETEXTRAASCENT, _markdownSavedAscent);
+		execute(SCI_SETEXTRADESCENT, _markdownSavedDescent);
+		_markdownActive = false;
+	}
 	StyleArray & stylers = NppParameters::getInstance().getMiscStylerArray();
 	Style * pStyleDefault = stylers.findByID(STYLE_DEFAULT);
 	if (pStyleDefault)
@@ -2177,6 +2186,19 @@ void ScintillaEditView::defineDocType(LangType typeDoc)
 		setSpecialStyle(*pStyle);
 	}
 	
+	if (markdown)
+	{
+		if (!_markdownActive)
+		{
+			_markdownSavedWrap = execute(SCI_GETWRAPMODE);
+			_markdownSavedAscent = execute(SCI_GETEXTRAASCENT);
+			_markdownSavedDescent = execute(SCI_GETEXTRADESCENT);
+		}
+		_markdownActive = true;
+		MarkdownLite::applyStyles(*this, NppDarkMode::isEnabled(), _currentBuffer->markdownRich());
+		if (!_currentBuffer->isLargeFile()) execute(SCI_SETWRAPMODE, SC_WRAP_WORD);
+	}
+
 	setTabSettings(NppParameters::getInstance().getLangFromID(typeDoc));
 	
 	if (svp._indentGuideLineShow)

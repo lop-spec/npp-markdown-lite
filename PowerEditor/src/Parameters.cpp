@@ -56,6 +56,8 @@
 #include "NppConstants.h"
 #include "NppDarkMode.h"
 #include "NppXml.h"
+#include "MarkdownLite/EmbeddedDefaults.h"
+#include "MarkdownLite/MenuIds.h"
 #include "ScintillaEditView.h"
 #include "ToolBar.h"
 #include "UserDefineDialog.h"
@@ -511,7 +513,19 @@ static constexpr WinMenuKeyDefinition winKeyDefs[]
 	{ VK_NULL,    IDM_UPDATE_NPP,                               false, false, false, L"Update Notepad++" },
 	{ VK_NULL,    IDM_CONFUPDATERPROXY,                         false, false, false, L"Set Updater Proxy..." },
 	{ VK_NULL,    IDM_DEBUGINFO,                                false, false, false, nullptr },
-	{ VK_F1,      IDM_ABOUT,                                    false, false, false, nullptr }
+	{ VK_F1,      IDM_ABOUT,                                    false, false, false, nullptr },
+	{ VK_NULL, IDM_MD_NEW,   false, false, false, L"New Markdown" },
+	{ VK_NULL, IDM_MD_MODE,  false, false, false, L"Markdown mode" },
+	{ VK_NULL, IDM_MD_RICH,  false, false, false, L"Markdown typography" },
+	{ VK_NULL, IDM_MD_BOLD,  false, false, false, L"Markdown bold" },
+	{ VK_NULL, IDM_MD_ITALIC,false, false, false, L"Markdown italic" },
+	{ VK_NULL, IDM_MD_CODE,  false, false, false, L"Markdown inline code" },
+	{ VK_NULL, IDM_MD_LINK,  false, false, false, L"Markdown link" },
+	{ VK_NULL, IDM_MD_FENCE, false, false, false, L"Markdown code fence" },
+	{ VK_NULL, IDM_MD_TASK,  false, false, false, L"Markdown toggle task" },
+	{ VK_NULL, IDM_MD_TABLE, false, false, false, L"Markdown align table" },
+	{ VK_NULL, IDM_MD_PREV,  false, false, false, L"Markdown previous heading" },
+	{ VK_NULL, IDM_MD_NEXT,  false, false, false, L"Markdown next heading" }
 };
 
 
@@ -1290,7 +1304,7 @@ std::wstring NppParameters::getSettingsFolder() const
 	if (settingsFolderPath.empty())
 		return _nppPath;
 
-	pathAppend(settingsFolderPath, L"Notepad++");
+	pathAppend(settingsFolderPath, L"NppMarkdownLite");
 	return settingsFolderPath;
 }
 
@@ -1343,7 +1357,7 @@ bool NppParameters::load()
 	{
 		_userPath = getSpecialFolderLocation(CSIDL_APPDATA);
 
-		pathAppend(_userPath, L"Notepad++");
+		pathAppend(_userPath, L"NppMarkdownLite");
 		if (!doesDirectoryExist(_userPath.c_str()))
 			::CreateDirectory(_userPath.c_str(), NULL);
 
@@ -1421,6 +1435,12 @@ bool NppParameters::load()
 			_userPath = _cmdSettingsDir;
 			_sessionPath = _userPath; // reset session path
 		}
+	}
+
+	if (!MarkdownLite::seedDefaults(_userPath))
+	{
+		::MessageBoxW(nullptr, L"Cannot create Npp Markdown Lite configuration files.", L"Npp Markdown Lite", MB_OK | MB_ICONERROR);
+		return false;
 	}
 
 	//--------------------------//

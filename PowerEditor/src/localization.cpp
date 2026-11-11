@@ -38,6 +38,8 @@
 #include "preferenceDlg.h"
 #include "resource.h"
 
+#include "MarkdownLite/MenuPositions.h"
+#if 0
 static constexpr MenuPosition g_menuFolderPositions[]{
 //==============================================
 //	{L0,  L1, L2, id},
@@ -123,6 +125,8 @@ static constexpr MenuPosition g_menuFolderPositions[]{
 
 	{ -1,  -1, -1, "" } // End of array
 };
+
+#endif
 
 const MenuPosition& MenuPosition::getMenuPosition(const char* id)
 {
