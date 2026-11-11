@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
-      - uses: microsoft/setup-msbuild@v2
+      - uses: microsoft/setup-msbuild@v3
       - name: Build native x64 editor
         run: msbuild PowerEditor/visual.net/notepadPlus.sln /m /p:Configuration=Release /p:Platform=x64 /p:RunCodeAnalysis=false /v:minimal
       - name: Core tests and native plugin probe
