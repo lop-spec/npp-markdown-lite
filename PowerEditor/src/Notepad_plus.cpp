@@ -3255,7 +3255,8 @@ bool Notepad_plus::braceMatch()
 
 void Notepad_plus::setLangStatus(LangType langType)
 {
-	_statusBar.setText(getLangDesc(langType).c_str(), STATUSBAR_DOC_TYPE);
+	const bool markdown = _pEditView && _pEditView->getCurrentBuffer() && _pEditView->getCurrentBuffer()->isMarkdownDocument();
+	_statusBar.setText(markdown ? L"Markdown" : getLangDesc(langType).c_str(), STATUSBAR_DOC_TYPE);
 }
 
 

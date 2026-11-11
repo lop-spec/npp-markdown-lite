@@ -27,6 +27,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Official plugin extraction failed' }
           $env:LITE_OFFICIAL_PLUGIN = '1'
           python tests/windows-smoke.py PowerEditor/bin64/notepad++.exe test-output
+          if ($LASTEXITCODE -ne 0) { throw 'Light-mode integration tests failed' }
+          $env:LITE_DARK = '1'
+          python tests/windows-smoke.py PowerEditor/bin64/notepad++.exe test-output/dark
+          if ($LASTEXITCODE -ne 0) { throw 'Dark-mode integration tests failed' }
       - name: Size gate and release evidence
         shell: pwsh
         run: |
@@ -38,8 +42,10 @@ jobs:
           "$hash  npp-markdown-lite.exe" | Set-Content -Encoding ascii dist/SHA256SUMS.txt
           @{ project='Npp Markdown Lite'; version='1.0.0'; commit=$env:GITHUB_SHA; upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13'; build='GitHub Actions windows-2025 MSVC Release x64'; bytes=$exe.Length; sha256=$hash; packed=$false; run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID" } | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
           Copy-Item test-output/smoke.json dist/
+          Copy-Item test-output/dark/smoke.json dist/smoke-dark.json
           Copy-Item LICENSE dist/LICENSE.txt
           if (Test-Path test-output/markdown-light.png) { Copy-Item test-output/markdown-light.png dist/ }
+          if (Test-Path test-output/dark/markdown-dark.png) { Copy-Item test-output/dark/markdown-dark.png dist/ }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

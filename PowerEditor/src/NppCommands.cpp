@@ -161,7 +161,10 @@ void Notepad_plus::command(int id)
 	{
 		fileNew();
 		_pEditView->getCurrentBuffer()->setMarkdownForced(true);
+		const wstring markdownName = wstring(_pEditView->getCurrentBuffer()->getFileName()) + L".md";
+		fileRenameUntitledPluginAPI(_pEditView->getCurrentBufferID(), markdownName.c_str());
 		_pEditView->defineDocType(L_TEXT);
+		setLangStatus(L_TEXT);
 		return;
 	}
 	if (id == IDM_MD_MODE || id == IDM_MD_RICH)
@@ -170,6 +173,7 @@ void Notepad_plus::command(int id)
 		if (id == IDM_MD_MODE) buffer->setMarkdownForced(!buffer->isMarkdownDocument());
 		else buffer->setMarkdownRich(!buffer->markdownRich());
 		_pEditView->defineDocType(buffer->getLangType());
+		setLangStatus(buffer->getLangType());
 		return;
 	}
 	if (_pEditView->getCurrentBuffer()->isMarkdownDocument() && MarkdownLite::editCommand(*_pEditView, id)) return;

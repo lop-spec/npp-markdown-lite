@@ -446,8 +446,11 @@ BOOL Notepad_plus::notify(SCNotification *notification)
 			NppGUI& nppGui = nppParam.getNppGUI();
 
 			Buffer* currentBuf = notifyView->getCurrentBuffer();
-			checkMenuItem(IDM_MD_MODE, currentBuf->isMarkdownDocument());
-			checkMenuItem(IDM_MD_RICH, currentBuf->isMarkdownDocument() && currentBuf->markdownRich());
+			if (notifyView == _pEditView)
+			{
+				checkMenuItem(IDM_MD_MODE, currentBuf->isMarkdownDocument());
+				checkMenuItem(IDM_MD_RICH, currentBuf->isMarkdownDocument() && currentBuf->markdownRich());
+			}
 			
 			// replacement for obsolete custom SCN_SCROLLED
 			if (notification->updated & SC_UPDATE_V_SCROLL)

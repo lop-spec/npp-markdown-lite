@@ -1,4 +1,5 @@
 """Run only on a CI runner or an inherited private/hidden Windows desktop."""
+import base64
 import ctypes as C
 from ctypes import wintypes as W
 import hashlib
@@ -73,7 +74,9 @@ def send(hwnd, message, w=0, l=0):
 
 checks = []
 def check(ok, label):
-    if not ok: raise AssertionError(label)
+    if not ok:
+        (out / 'failure.json').write_text(json.dumps({'failure': label, 'passed': checks}, ensure_ascii=False, indent=2), encoding='utf-8')
+        raise AssertionError(label)
     checks.append(label)
 
 def windows(pid, parent=None):
@@ -94,6 +97,11 @@ def windows(pid, parent=None):
 work = Path(tempfile.mkdtemp(prefix='npp-lite-smoke-'))
 profile = work / 'settings'
 profile.mkdir()
+dark = os.environ.get('LITE_DARK') == '1'
+if dark:
+    config = (root / 'PowerEditor/src/MarkdownLite/config.xml').read_text(encoding='utf-8')
+    config = config.replace('<GUIConfigs>', '<GUIConfigs><GUIConfig name="DarkMode" enable="yes" colorTone="0" enableWindowsMode="no" />')
+    (profile / 'config.xml').write_text(config, encoding='utf-8')
 fixture = work / 'sample.md'
 sample = '# Markdown 原生编辑\n\n## 标题层级\n\n正文 **粗体** 和 *斜体*，以及 `code()`。\n\n> 引用保留原文\n\n- [ ] 待办事项\n- [x] 已完成\n\n[链接](https://example.com)\n\n```python\nprint("中文内容")\n```\n\n| 名称 | 值 |\n| --- | --- |\n| 中文 | abc |\n'
 fixture.write_bytes(sample.encode('utf-8'))
@@ -152,6 +160,10 @@ try:
     code_at = sample.encode('utf-8').index(b'print(')
     check(send(sci, 'SCI_GETSTYLEAT', code_at) == 25, 'fenced code has dedicated full-line style')
     check(send(sci, 'SCI_GETWRAPMODE') != 0, 'Markdown soft wrap')
+    if dark:
+        background = send(sci, 'SCI_STYLEGETBACK', 0)
+        check((background & 255) < 80 and ((background >> 8) & 255) < 80, 'actual dark Markdown background')
+        check(send(sci, 'SCI_GETCARETFORE') == send(sci, 'SCI_STYLEGETFORE', 0), 'dark caret remains visible')
     check(send(sci, 'SCI_GETMODIFY') == 0 and text() == sample, 'opening and styling is byte-preserving')
     check(all((profile / x).exists() for x in ['config.xml', 'langs.xml', 'stylers.xml']), 'single EXE seeds all defaults')
     menu = u.GetMenu(main)
@@ -181,9 +193,9 @@ try:
     # renders this test window only; it never captures the user's desktop.
     try:
         from screenshot import capture
-        u.SetWindowPos(main, None, 0, 0, 2304, 1536, 0x14)
+        if not u.SetWindowPos(main, None, 0, 0, 2304, 1536, 0x414): raise OSError(C.get_last_error(), 'test window resize')
         time.sleep(0.4)
-        capture(main, out / 'markdown-light.png')
+        capture(main, out / ('markdown-dark.png' if dark else 'markdown-light.png'))
     except Exception as error:
         (out / 'screenshot-error.txt').write_text(str(error), encoding='utf-8')
 
@@ -229,6 +241,21 @@ try:
     send(sci, 'SCI_GOTOPOS', 0)
     command('IDM_MD_NEXT')
     check(send(sci, 'SCI_LINEFROMPOSITION', send(sci, 'SCI_GETCURRENTPOS')) == 6, 'heading navigation skips fenced code')
+    set_text('---\ntitle: sample\n---\n\n# heading')
+    check(send(sci, 'SCI_GETSTYLEAT', text().encode('utf-8').index(b'# heading') + 3) == 6, 'front matter ends before heading styling')
+    set_text('```md\n# inside\n```\n\n# outside')
+    send(sci, 'SCI_SETTARGETRANGE', 0, 3)
+    pointer_message(sci, 'SCI_REPLACETARGET', b'~~~\0', w=3)
+    send(sci, 'SCI_COLOURISE', 0, 4)
+    check(send(sci, 'SCI_GETSTYLEAT', text().encode('utf-8').index(b'# outside')) == 25, 'incremental fence edit restyles following section')
+    send(sci, 'SCI_UNDO')
+    send(sci, 'SCI_COLOURISE', 0, 4)
+    check(send(sci, 'SCI_GETSTYLEAT', text().encode('utf-8').index(b'# outside') + 3) == 6, 'undo restores incremental fence boundary')
+    set_text('# title\n\nbody\n\n## child\nmore')
+    send(sci, 'SCI_FOLDLINE', 0, 2)
+    check(send(sci, 'SCI_GETLINEVISIBLE', 2) == 0, 'native heading collapse hides section')
+    send(sci, 'SCI_FOLDLINE', 0, 2)
+    check(send(sci, 'SCI_GETLINEVISIBLE', 2) == 1, 'native heading expansion restores section')
     command('IDM_MD_RICH')
     check(send(sci, 'SCI_STYLEGETBOLD', 2) == 0, 'source appearance toggle')
     command('IDM_MD_RICH')
@@ -239,13 +266,16 @@ try:
     send(main, 0x111, plugin_id)
     check(text() == 'plugin-ok', 'plugin command edits original Scintilla')
     if os.environ.get('LITE_OFFICIAL_PLUGIN') == '1':
-        encode = next((item_id for name, item_id in menu_items if name.replace('&', '').strip() == 'Base64 Encode'), None)
-        decode = next((item_id for name, item_id in menu_items if name.replace('&', '').strip() == 'Base64 Decode'), None)
+        encode = next((item_id for name, item_id in menu_items if name.replace('&', '').split('\t')[0].strip() == 'Base64 Encode'), None)
+        decode = next((item_id for name, item_id in menu_items if name.replace('&', '').split('\t')[0].strip() == 'Base64 Decode'), None)
         check(encode is not None and decode is not None, 'official mimeTools registers native commands')
         set_text('hello')
         send(sci, 'SCI_SELECTALL')
         send(main, 0x111, encode)
-        check(text() == 'aGVsbG8=', 'official mimeTools Base64 encode works')
+        encoded = text()
+        # MIME Tools 3.1 defaults to unpadded Base64; both padded and unpadded
+        # forms encode the same bytes. This checks semantics, not an old UI default.
+        check(base64.b64decode(encoded + '=' * (-len(encoded) % 4)) == b'hello', 'official mimeTools Base64 encode works: ' + repr(encoded))
         send(sci, 'SCI_SELECTALL')
         send(main, 0x111, decode)
         check(text() == 'hello', 'official mimeTools Base64 decode works')
