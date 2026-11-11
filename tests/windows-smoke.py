@@ -164,6 +164,8 @@ try:
         background = send(sci, 'SCI_STYLEGETBACK', 0)
         check((background & 255) < 80 and ((background >> 8) & 255) < 80, 'actual dark Markdown background')
         check(send(sci, 'SCI_GETCARETFORE') == send(sci, 'SCI_STYLEGETFORE', 0), 'dark caret remains visible')
+        check(send(sci, 'SCI_STYLEGETBACK', 33) == background, 'dark line-number margin matches editor')
+        check((send(sci, 'SCI_GETCARETLINEBACK') & 255) < 80, 'dark current-line highlight is not light-theme color')
     check(send(sci, 'SCI_GETMODIFY') == 0 and text() == sample, 'opening and styling is byte-preserving')
     check(all((profile / x).exists() for x in ['config.xml', 'langs.xml', 'stylers.xml']), 'single EXE seeds all defaults')
     menu = u.GetMenu(main)

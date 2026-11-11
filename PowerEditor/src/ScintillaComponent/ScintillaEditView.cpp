@@ -1756,12 +1756,13 @@ void ScintillaEditView::defineDocType(LangType typeDoc)
 	const bool markdown = _isMainEditZone && _currentBuffer && _currentBuffer->isMarkdownDocument();
 	if (_markdownActive && !markdown)
 	{
+		_markdownActive = false;
+		performGlobalStyles();
 		execute(SCI_SETWRAPMODE, _markdownSavedWrap);
 		execute(SCI_SETEXTRAASCENT, _markdownSavedAscent);
 		execute(SCI_SETEXTRADESCENT, _markdownSavedDescent);
 		execute(SCI_SETTECHNOLOGY, _markdownSavedTechnology);
 		execute(SCI_SETCARETFORE, _markdownSavedCaret);
-		_markdownActive = false;
 	}
 	StyleArray & stylers = NppParameters::getInstance().getMiscStylerArray();
 	Style * pStyleDefault = stylers.findByID(STYLE_DEFAULT);
@@ -3411,6 +3412,7 @@ void ScintillaEditView::performGlobalStyles()
 		npcCustomColor = pStyle->_fgColor;
 	}
 	setNpcAndCcUniEOL(npcCustomColor);
+	if (_markdownActive) MarkdownLite::applyChrome(*this, NppDarkMode::isEnabled());
 }
 
 void ScintillaEditView::setWhitespaceSize() const

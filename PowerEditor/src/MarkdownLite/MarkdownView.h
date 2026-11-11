@@ -30,6 +30,20 @@ template<class View> inline const char* eol(View& view)
 	const auto mode = view.execute(SCI_GETEOLMODE);
 	return mode == SC_EOL_CRLF ? "\r\n" : (mode == SC_EOL_CR ? "\r" : "\n");
 }
+template<class View> inline void applyChrome(View& view, bool dark)
+{
+	const COLORREF paper = dark ? RGB(30, 33, 39) : RGB(250, 250, 249);
+	const COLORREF ink = dark ? RGB(214, 218, 225) : RGB(40, 46, 55);
+	const COLORREF muted = dark ? RGB(135, 147, 165) : RGB(111, 122, 136);
+	view.execute(SCI_STYLESETBACK, STYLE_LINENUMBER, paper);
+	view.execute(SCI_STYLESETFORE, STYLE_LINENUMBER, muted);
+	view.execute(SCI_SETMARGINBACKN, View::_SC_MARGE_SYMBOL, paper);
+	view.execute(SCI_SETMARGINBACKN, View::_SC_MARGE_CHANGEHISTORY, paper);
+	view.execute(SCI_SETFOLDMARGINCOLOUR, true, paper);
+	view.execute(SCI_SETFOLDMARGINHICOLOUR, true, paper);
+	view.execute(SCI_SETCARETFORE, ink);
+	view.execute(SCI_SETCARETLINEBACK, dark ? RGB(39, 47, 59) : RGB(234, 241, 250));
+}
 template<class View> inline void applyStyles(View& view, bool dark, bool rich)
 {
 	view.execute(SCI_SETILEXER, 0, reinterpret_cast<LPARAM>(createLexer()));
@@ -50,7 +64,7 @@ template<class View> inline void applyStyles(View& view, bool dark, bool rich)
 		view.execute(SCI_STYLESETUNDERLINE, style, false);
 		view.execute(SCI_STYLESETEOLFILLED, style, false);
 	}
-	view.execute(SCI_SETCARETFORE, ink);
+	applyChrome(view, dark);
 	view.execute(SCI_STYLESETFORE, STYLE_DEFAULT, ink);
 	view.execute(SCI_STYLESETBACK, STYLE_DEFAULT, paper);
 	view.execute(SCI_SETEXTRAASCENT, rich ? 3 : 0);

@@ -26,10 +26,11 @@ jobs:
           tar.exe -xf $archive -C PowerEditor/bin64 plugins/mimeTools/mimeTools.dll
           if ($LASTEXITCODE -ne 0) { throw 'Official plugin extraction failed' }
           $env:LITE_OFFICIAL_PLUGIN = '1'
-          python tests/windows-smoke.py PowerEditor/bin64/notepad++.exe test-output
+          Copy-Item PowerEditor/bin64/notepad++.exe PowerEditor/bin64/npp-markdown-lite.exe
+          python tests/windows-smoke.py PowerEditor/bin64/npp-markdown-lite.exe test-output
           if ($LASTEXITCODE -ne 0) { throw 'Light-mode integration tests failed' }
           $env:LITE_DARK = '1'
-          python tests/windows-smoke.py PowerEditor/bin64/notepad++.exe test-output/dark
+          python tests/windows-smoke.py PowerEditor/bin64/npp-markdown-lite.exe test-output/dark
           if ($LASTEXITCODE -ne 0) { throw 'Dark-mode integration tests failed' }
       - name: Size gate and release evidence
         shell: pwsh
