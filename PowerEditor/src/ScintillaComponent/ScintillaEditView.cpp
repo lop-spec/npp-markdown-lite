@@ -1762,7 +1762,6 @@ void ScintillaEditView::defineDocType(LangType typeDoc)
 		execute(SCI_SETEXTRAASCENT, _markdownSavedAscent);
 		execute(SCI_SETEXTRADESCENT, _markdownSavedDescent);
 		execute(SCI_SETTECHNOLOGY, _markdownSavedTechnology);
-		execute(SCI_SETCARETFORE, _markdownSavedCaret);
 	}
 	StyleArray & stylers = NppParameters::getInstance().getMiscStylerArray();
 	Style * pStyleDefault = stylers.findByID(STYLE_DEFAULT);
@@ -2197,7 +2196,6 @@ void ScintillaEditView::defineDocType(LangType typeDoc)
 			_markdownSavedAscent = execute(SCI_GETEXTRAASCENT);
 			_markdownSavedDescent = execute(SCI_GETEXTRADESCENT);
 			_markdownSavedTechnology = execute(SCI_GETTECHNOLOGY);
-			_markdownSavedCaret = execute(SCI_GETCARETFORE);
 		}
 		_markdownActive = true;
 		if (NppParameters::getInstance().getNppGUI()._writeTechnologyEngine != directWriteTechnologyUnavailable)
