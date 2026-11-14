@@ -16,6 +16,7 @@
 
 
 #include "WordStyleDlg.h"
+#include "Lite/ChineseUi.h"
 
 #include <windows.h>
 
@@ -633,7 +634,7 @@ void WordStyleDlg::loadLangListFromNppParam()
 	// Clean up Language List
 	::SendDlgItemMessage(_hSelf, IDC_LANGUAGES_COMBO, CB_RESETCONTENT, 0, 0);
 
-	::SendDlgItemMessage(_hSelf, IDC_LANGUAGES_COMBO, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Global Styles"));
+	::SendDlgItemMessage(_hSelf, IDC_LANGUAGES_COMBO, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"全局样式"));
 	// All the lexers
 	for (size_t i = 0, nb = _lsArray.getNbLexer() ; i < nb ; ++i)
 	{
@@ -660,14 +661,11 @@ bool WordStyleDlg::getStyleName(std::wstring& styleName, const size_t styleNameL
 	if (i == LB_ERR)
 		return false;
 	
-	const auto lbTextLen = ::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_GETTEXTLEN, i, 0);
-	if (lbTextLen == LB_ERR || static_cast<size_t>(lbTextLen) > styleNameLenLimit)
-		return false;
-
-	auto buffer = std::wstring(static_cast<size_t>(lbTextLen), L'\0');
-	::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_GETTEXT, i, reinterpret_cast<LPARAM>(buffer.data()));
-
-	styleName = buffer;
+	const auto original = ::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_GETITEMDATA, i, 0);
+	if (original == LB_ERR || original == 0) return false;
+	const auto* name = reinterpret_cast<const wchar_t*>(original);
+	if (wcslen(name) > styleNameLenLimit) return false;
+	styleName = name;
 	return true;
 }
 
@@ -979,7 +977,8 @@ bool WordStyleDlg::goToSection(const wchar_t* sectionNames)
 	if (sections.size() == 0 || sections.size() >= 3)
 		return false;
 
-	auto i = ::SendDlgItemMessage(_hSelf, IDC_LANGUAGES_COMBO, CB_FINDSTRING, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(sections[0].c_str()));
+	const auto languageLabel = Lite::chineseLabel(sections[0]);
+	auto i = ::SendDlgItemMessage(_hSelf, IDC_LANGUAGES_COMBO, CB_FINDSTRING, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(languageLabel.c_str()));
 	if (i == LB_ERR)
 		return false;
 	::SendDlgItemMessage(_hSelf, IDC_LANGUAGES_COMBO, CB_SETCURSEL, i, 0);
@@ -988,7 +987,8 @@ bool WordStyleDlg::goToSection(const wchar_t* sectionNames)
 	if (sections.size() == 1)
 		return true;
 
-	i = ::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_FINDSTRING, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(sections[1].c_str()));
+	const auto styleLabel = Lite::chineseLabel(sections[1]);
+	i = ::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_FINDSTRING, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(styleLabel.c_str()));
 	if (i == LB_ERR)
 		return false;
 	::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_SETCURSEL, i, 0);
@@ -1045,8 +1045,9 @@ void WordStyleDlg::setStyleListFromLexer(int index)
 
 	for (const auto& style : lexerStyler)
 	{
-		const std::wstring styleDesc = (style._styleDesc);
-		::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(styleDesc.c_str()));
+		const std::wstring styleDesc = Lite::chineseLabel(style._styleDesc);
+		const auto item = ::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(styleDesc.c_str()));
+		::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_SETITEMDATA, item, reinterpret_cast<LPARAM>(style._styleDesc.c_str()));
 	}
 	::SendDlgItemMessage(_hSelf, IDC_STYLES_LIST, LB_SETCURSEL, 0, 0);
 	setVisualFromStyleList();

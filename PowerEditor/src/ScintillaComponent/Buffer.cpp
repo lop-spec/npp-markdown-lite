@@ -2011,6 +2011,13 @@ BufferID FileManager::bufferFromDocument(Document doc, bool isMainEditZone)
 	newBuf->_id = id;
 	const NewDocDefaultSettings& ndds = (nppParamInst.getNppGUI()).getNewDocDefaultSettings();
 	newBuf->_lang = ndds._lang;
+	if (isMainEditZone && ndds._lang == L_USER)
+	{
+		if (!ndds._udl.empty() && nppParamInst.getULCFromName(ndds._udl.c_str()))
+			newBuf->setLangType(L_USER, ndds._udl.c_str());
+		else
+			newBuf->_lang = L_TEXT;
+	}
 	newBuf->setTabCreatedTimeStringWithCurrentTime();
 	_buffers.push_back(newBuf);
 	++_nbBufs;

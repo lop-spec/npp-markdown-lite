@@ -6,7 +6,7 @@
         <GUIConfig name="DockingManager" leftWidth="200" rightWidth="440" topHeight="200" bottomHeight="200" />
         <GUIConfig name="RememberLastSession">yes</GUIConfig>
         <GUIConfig name="noUpdate">yes</GUIConfig>
-        <GUIConfig name="NewDocDefaultSettings" format="0" encoding="4" lang="0" codepage="-1" openAnsiAsUTF8="yes" />
+        <GUIConfig name="NewDocDefaultSettings" format="0" encoding="4" lang="15" udl="Markdown" codepage="-1" openAnsiAsUTF8="yes" />
         <GUIConfig name="auto-completion" autoCAction="0" funcParams="no" />
         <GUIConfig name="AppPosition" x="100" y="100" width="1100" height="760" isMaximized="no" />
         <GUIConfig name="ScintillaPrimaryView" lineNumberMargin="show" bookMarkMargin="show" indentGuideLine="show" folderMarkStyle="box" Wrap="no" />

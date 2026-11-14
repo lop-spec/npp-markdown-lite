@@ -16,6 +16,7 @@
 
 
 #include "PluginsManager.h"
+#include "Lite/ChineseUi.h"
 
 #include <windows.h>
 
@@ -591,7 +592,9 @@ void PluginsManager::addInMenuFromPMIndex(int i)
 
 		const int cmdID = ID_PLUGINS_CMD + static_cast<int>(_pluginsCommands.size() - 1);
 		_pluginInfos[i]->_funcItems[j]._cmdID = cmdID;
-		string itemName = wstring2string(_pluginInfos[i]->_funcItems[j]._itemName, CP_UTF8);
+		const auto itemLabel = _wcsicmp(_pluginInfos[i]->_moduleName.c_str(), L"NppMarkdownPanel.dll") == 0
+			? Lite::chineseLabel(_pluginInfos[i]->_funcItems[j]._itemName) : std::wstring(_pluginInfos[i]->_funcItems[j]._itemName);
+		string itemName = wstring2string(itemLabel, CP_UTF8);
 
 		if (_pluginInfos[i]->_funcItems[j]._pShKey)
 		{
@@ -643,6 +646,7 @@ HMENU PluginsManager::initMenu(HMENU hMenu, bool enablePluginAdmin)
 
 void PluginsManager::runPluginCommand(size_t i)
 {
+	Lite::ChinesePluginDialogs chineseDialogs(i < _pluginsCommands.size() && _wcsicmp(_pluginsCommands[i]._pluginName.c_str(), L"NppMarkdownPanel.dll") == 0);
 	if (i < _pluginsCommands.size())
 	{
 		if (_pluginsCommands[i]._pFunc != NULL)
@@ -668,6 +672,7 @@ void PluginsManager::runPluginCommand(size_t i)
 
 void PluginsManager::runPluginCommand(const wchar_t *pluginName, int commandID)
 {
+	Lite::ChinesePluginDialogs chineseDialogs(pluginName && _wcsicmp(pluginName, L"NppMarkdownPanel.dll") == 0);
 	for (size_t i = 0, len = _pluginsCommands.size() ; i < len ; ++i)
 	{
 		if (!_wcsicmp(_pluginsCommands[i]._pluginName.c_str(), pluginName))

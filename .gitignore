@@ -171,6 +171,7 @@ PowerEditor/src/MISC/md5/RCa06792
 .scratch/
 test-output*/
 dist/
+PowerEditor/src/Lite/generated/
 **/__pycache__/
 *.exp
 *.dll

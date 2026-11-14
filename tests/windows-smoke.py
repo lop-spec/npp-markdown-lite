@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import shutil
 import subprocess
 import sys
@@ -86,6 +87,10 @@ def windows(pid, parent=None):
 work = Path(tempfile.mkdtemp(prefix='npp-lite-smoke-'))
 profile = work / 'settings'
 profile.mkdir()
+if os.environ.get('LITE_DARK') == '1':
+    config=(root/'PowerEditor/src/Lite/config.xml').read_text(encoding='utf-8')
+    config=config.replace('<GUIConfigs>','<GUIConfigs><GUIConfig name="DarkMode" enable="yes" tone="0" />')
+    (profile/'config.xml').write_text(config,encoding='utf-8')
 fixture = work / 'sample.md'
 sample = '# NPP-LITE-PREVIEW-SENTINEL\n\nOriginal Markdown source.\n\n| Name | Value |\n| --- | --- |\n| hello | world |\n'
 fixture.write_bytes(sample.encode('utf-8'))
@@ -129,7 +134,19 @@ try:
         send(sci, 'SCI_EMPTYUNDOBUFFER')
     def command(name): send(main, 0x111, constants[name])
     check(text() == sample and send(sci, 'SCI_GETMODIFY') == 0, 'opening MD preserves native editable source')
-    check(send(sci, 'SCI_GETLEXER') != 98 and send(sci, 'SCI_GETEXTRAASCENT') == 0 and send(sci, 'SCI_GETEXTRADESCENT') == 0, 'no custom Markdown lexer or extra line spacing')
+    check(send(sci, 'SCI_GETLEXER') == 152 and send(sci, 'SCI_GETEXTRAASCENT') == 0 and send(sci, 'SCI_GETEXTRADESCENT') == 0, 'native Markdown UDL with no extra line spacing')
+    send(sci,'SCI_COLOURISE',0,-1)
+    used_styles={send(sci,'SCI_GETSTYLEAT',i) for i in range(len(sample.encode('utf-8')))}
+    check(len(used_styles)>=3,'Markdown headings, body and punctuation receive native highlighting')
+    check(all(send(sci,'SCI_STYLEGETSIZE',style)==11 for style in used_styles),'all Markdown styles use equal 11pt size')
+    check(all(pointer_message(sci,'SCI_STYLEGETFONT',capacity=128,w=style).split(b'\0')[0].decode('utf-8')=='宋体' for style in used_styles),'all Markdown styles actually use requested SimSun font')
+    check(send(sci,'SCI_TEXTHEIGHT',0)==send(sci,'SCI_TEXTHEIGHT',2),'heading and body retain equal native line height')
+    command('IDM_FILE_NEW')
+    check(send(sci,'SCI_GETLEXER')==152 and send(sci,'SCI_GETTEXTLENGTH')==0,'new documents default to native Markdown')
+    command('IDM_FILE_CLOSE')
+    preference_tests=runpy.run_path(str(root/'tests/preferences-smoke.py'))
+    context=(u,send,pointer_message,windows,check,main,process.pid,out,root)
+    if os.environ.get('LITE_DARK')!='1': preference_tests['verify'](context)
     check(not (root / 'PowerEditor/src/MarkdownLite').exists(), 'custom Markdown source directory deleted')
     labels, items = [], []
     def inspect(menu, top=False):
@@ -178,7 +195,7 @@ try:
     set_text('')
     send(main, 0x111, probe)
     check(text() == 'plugin-ok', 'native plugin edits original Scintilla')
-    panel = next((i for name, i in items if 'Toggle' in name and 'Markdown Panel' in name.replace('&','')), None)
+    panel = next((i for name, i in items if '显示或隐藏 Markdown 面板' in name), None)
     check(panel is not None, 'official Markdown Panel menu registered')
     set_text(sample)
     send(main, 0x111, panel)
@@ -194,6 +211,10 @@ try:
     set_text(sample.replace('PREVIEW-SENTINEL', 'EDIT-UPDATED'))
     verify_preview('NPP-LITE-EDIT-UPDATED', 'panel-updated.json')
     check(hashlib.sha256(fixture.read_bytes()).hexdigest() == before, 'preview and editing leave disk untouched until save')
+    if os.environ.get('LITE_DARK')!='1':
+        settings=next((i for name,i in items if name=='设置' and i>=22000 and i<40000),None)
+        check(settings is not None,'official plugin settings command translated')
+        preference_tests['verify_plugin'](context,settings)
     from screenshot import capture
     u.SetWindowPos(main, None, 0, 0, 2304, 1536, 0x414)
     time.sleep(1)

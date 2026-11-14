@@ -1098,6 +1098,8 @@ void ScintillaEditView::setEmbeddedAspLexer() const
 
 void ScintillaEditView::setUserLexer(const wchar_t* userLangName) const
 {
+	if (userLangName && (wcscmp(userLangName, L"Markdown") == 0 || wcscmp(userLangName, L"Markdown（深色）") == 0))
+		userLangName = NppDarkMode::isEnabled() ? L"Markdown（深色）" : L"Markdown";
 	int setKeywordsCounter = 0;
 	setLexerFromLangID(L_USER);
 

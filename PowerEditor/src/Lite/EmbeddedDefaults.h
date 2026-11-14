@@ -7,7 +7,7 @@ namespace Lite
 inline bool seedDefaults(const std::wstring& directory)
 {
 	struct DefaultFile { int id; const wchar_t* name; };
-	constexpr DefaultFile files[] = { { 9101, L"langs.xml" }, { 9102, L"stylers.xml" }, { 9103, L"config.xml" } };
+	constexpr DefaultFile files[] = { { 9101, L"langs.xml" }, { 9102, L"stylers.xml" }, { 9103, L"config.xml" }, { 9104, L"nativeLang.xml" }, { 9105, L"userDefineLang.xml" } };
 	for (const auto& file : files)
 	{
 		const auto path = directory + L"\\" + file.name;

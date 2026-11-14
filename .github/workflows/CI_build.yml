@@ -11,6 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v2
+      - name: Prepare official Chinese UI and native Markdown defaults
+        run: python deploy/prepare-ui-assets.py
       - name: Build native x64 editor
         run: msbuild PowerEditor/visual.net/notepadPlus.sln /m /p:Configuration=Release /p:Platform=x64 /p:RunCodeAnalysis=false /v:minimal
       - name: Build native plugin ABI probe
@@ -21,7 +23,7 @@ jobs:
         run: |
           ./deploy/install-panel.ps1 -EditorDirectory PowerEditor/bin64
           New-Item -ItemType Directory -Force PowerEditor/bin64/plugins/Config | Out-Null
-          "[Options]`nAutoShowPanel=0`nShowToolbar=0`nShowStatusbar=0`nZoomLevel=100`nRenderingEngine=EDGE" | Set-Content -Encoding ascii PowerEditor/bin64/plugins/Config/NppMarkdownPanel.ini
+          "[Options]`nAutoShowPanel=0`nSupportFilesWithNoExt=1`nShowToolbar=0`nShowStatusbar=0`nZoomLevel=100`nRenderingEngine=EDGE" | Set-Content -Encoding ascii PowerEditor/bin64/plugins/Config/NppMarkdownPanel.ini
           Copy-Item PowerEditor/bin64/notepad++.exe PowerEditor/bin64/npp-lite.exe
           New-Item -ItemType File PowerEditor/bin64/doLocalConf.xml | Out-Null
       - name: Prepare official WebView2 runtime on ephemeral CI runner
@@ -43,6 +45,11 @@ jobs:
         env:
           WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: --force-renderer-accessibility
         run: python tests/windows-smoke.py PowerEditor/bin64/npp-lite.exe test-output
+      - name: Verify native dark Markdown palette
+        env:
+          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: --force-renderer-accessibility
+          LITE_DARK: '1'
+        run: python tests/windows-smoke.py PowerEditor/bin64/npp-lite.exe test-output-dark
       - name: Package verified EXE and complete official plugin
         shell: pwsh
         run: |
@@ -52,17 +59,23 @@ jobs:
           Copy-Item $exe.FullName dist/npp-lite.exe
           Copy-Item $exe.FullName dist/portable/npp-lite.exe
           Copy-Item PowerEditor/bin64/plugins/NppMarkdownPanel dist/portable/plugins/ -Recurse
-          "[Options]`nAutoShowPanel=1`nShowToolbar=0`nShowStatusbar=0`nZoomLevel=100`nRenderingEngine=EDGE" | Set-Content -Encoding ascii dist/portable/plugins/Config/NppMarkdownPanel.ini
+          "[Options]`nAutoShowPanel=1`nSupportFilesWithNoExt=1`nShowToolbar=0`nShowStatusbar=0`nZoomLevel=100`nRenderingEngine=EDGE" | Set-Content -Encoding ascii dist/portable/plugins/Config/NppMarkdownPanel.ini
           New-Item -ItemType File dist/portable/doLocalConf.xml | Out-Null
           Copy-Item LICENSE dist/portable/LICENSE.txt
           Copy-Item README.md dist/portable/README.md
           Copy-Item docs/removed-commands.md dist/portable/removed-commands.md
+          Copy-Item PowerEditor/src/Lite/generated/settings-manifest.json dist/portable/settings-manifest.json
+          Copy-Item deploy/markdown/LICENSE.txt dist/portable/markdown-udl-license.txt
           Compress-Archive -Path dist/portable/* -DestinationPath dist/npp-lite-x64-portable.zip
           $hash = (Get-FileHash dist/npp-lite.exe -Algorithm SHA256).Hash.ToLower()
           $zipHash = (Get-FileHash dist/npp-lite-x64-portable.zip -Algorithm SHA256).Hash.ToLower()
           @("$hash  npp-lite.exe", "$zipHash  npp-lite-x64-portable.zip") | Set-Content -Encoding ascii dist/SHA256SUMS.txt
-          @{project='Npp Lite';version='1.1.0';commit=$env:GITHUB_SHA;upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13';build='GitHub Actions windows-2025 MSVC Release x64';bytes=$exe.Length;sha256=$hash;portableSha256=$zipHash;packed=$false;retiredCommands=80;hostToolbarButtons=8;plugin='Markdown Panel 0.9.3 x64';run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
+          @{project='Npp Lite';version='1.2.0';commit=$env:GITHUB_SHA;upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13';build='GitHub Actions windows-2025 MSVC Release x64';bytes=$exe.Length;sha256=$hash;portableSha256=$zipHash;packed=$false;retiredCommands=80;retiredPreferenceControls=98;retainedPreferencePages=14;defaultLanguage='Markdown';interfaceLanguage='zh-CN';hostToolbarButtons=8;plugin='Markdown Panel 0.9.3 x64';run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
           Copy-Item test-output/smoke.json dist/
+          Copy-Item test-output-dark/smoke.json dist/smoke-dark.json
+          Copy-Item test-output/preferences.json dist/
+          Copy-Item test-output/plugin-settings.json dist/
+          Copy-Item PowerEditor/src/Lite/generated/settings-manifest.json dist/
           Copy-Item tests/native-acceptance.dll dist/
           Copy-Item test-output/native-editor-panel.png dist/
           Copy-Item LICENSE dist/LICENSE.txt
@@ -73,6 +86,7 @@ jobs:
           name: test-evidence
           path: |
             test-output/*
+            test-output-dark/*
             PowerEditor/bin64/npp-lite.exe
       - uses: actions/upload-artifact@v4
         with:

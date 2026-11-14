@@ -441,8 +441,10 @@ IDI_FUNCLIST_PREFERENCEBUTTON_DM   ICON     "icons/dark/panels/toolbar/funclstPr
 IDI_GET_INFO_FROM_TOOLTIP       ICON        "icons/moreOnTooltip.ico"
 
 9101 RCDATA "langs.model.xml"
-9102 RCDATA "stylers.model.xml"
+9102 RCDATA "Lite/generated/stylers.xml"
 9103 RCDATA "Lite/config.xml"
+9104 RCDATA "Lite/generated/nativeLang.xml"
+9105 RCDATA "Lite/generated/userDefineLang.xml"
 #include "Lite/Menu.rc"
 #if 0 // Full upstream menu is not compiled into the Lite binary.
 IDR_M30_MENU MENU
