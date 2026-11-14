@@ -1,6 +1,6 @@
 # Npp Lite
 
-原生编辑器与 Markdown 插件分工：编辑区保持 Notepad++ 的字符编辑、紧凑行距、列模式、搜索替换和插件消息协议；Markdown 的渲染交给完整安装的官方 Markdown Panel 0.9.3 x64。不内置自写 Markdown 解析器或富文本编辑逻辑；源码高亮使用原生UDL，默认宋体、统一11磅和原生行高。
+原生编辑器与 Markdown 插件分工：编辑区保持 Notepad++ 的字符编辑、紧凑行距、列模式、搜索替换和插件消息协议；Markdown 的渲染交给完整安装的官方 Markdown Panel 0.9.3 x64。不内置自写 Markdown 解析器或富文本编辑逻辑；源码高亮使用原生UDL，默认微软雅黑、统一11磅和原生行高。
 
 ## 精简
 
@@ -14,7 +14,7 @@
 
 首选项保留14页；工具栏装饰、非打印字符细项、文件关联、语言菜单、高亮、打印、多实例、分隔符、云与链接、搜索引擎10页不再创建。9页模板不编入EXE；文件关联模板因上游共用资源保留，但不再注册该设置页。98个可操作控件的清单由真实资源模板生成，不计标签；保持原生历史页索引到新列表的映射，已退役页的内部链接安全拒绝。
 
-`deploy/prepare-ui-assets.py`在构建前生成官方中文、宋体默认样式、原生Markdown深浅UDL和样式中文显示名。样式列表存原始键为ItemData，保存和行为判断不使用译名；语法配色仍为上游配置格式。UDL配置来自Edditoria/markdown-plus-plus，固定来源提交`bad918ee8fbf322f723bf5dd4162a462837720f2`，MIT许可随包提供。复杂嵌套语法仍受原生UDL能力限制，不声称替代完整Markdown渲染。
+`deploy/prepare-ui-assets.py`在构建前生成官方中文、微软雅黑默认样式、原生Markdown深浅UDL和样式中文显示名。样式列表存原始键为ItemData，保存和行为判断不使用译名；语法配色仍为上游配置格式。UDL配置来自Edditoria/markdown-plus-plus，固定来源提交`bad918ee8fbf322f723bf5dd4162a462837720f2`，MIT许可随包提供。复杂嵌套语法仍受原生UDL能力限制，不声称替代完整Markdown渲染。
 
 ## 插件
 

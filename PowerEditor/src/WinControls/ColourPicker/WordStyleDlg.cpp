@@ -1276,11 +1276,16 @@ void WordStyleDlg::setVisualFromStyleList()
 	LRESULT iFontName = 0;
 	if (!style._fontName.empty())
 	{
-		iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRING, 1, reinterpret_cast<LPARAM>(style._fontName.c_str()));
+		iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRINGEXACT, 1, reinterpret_cast<LPARAM>(style._fontName.c_str()));
 		if (iFontName == CB_ERR && (style._fontName == L"SimSun" || style._fontName == L"宋体"))
 		{
 			const auto* alias = style._fontName == L"SimSun" ? L"宋体" : L"SimSun";
-			iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRING, 1, reinterpret_cast<LPARAM>(alias));
+			iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRINGEXACT, 1, reinterpret_cast<LPARAM>(alias));
+		}
+		if (iFontName == CB_ERR && (style._fontName == L"Microsoft YaHei" || style._fontName == L"微软雅黑"))
+		{
+			const auto* alias = style._fontName == L"Microsoft YaHei" ? L"微软雅黑" : L"Microsoft YaHei";
+			iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRINGEXACT, 1, reinterpret_cast<LPARAM>(alias));
 		}
 		if (iFontName == CB_ERR)
 			iFontName = 0;

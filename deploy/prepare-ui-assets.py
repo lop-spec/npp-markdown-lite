@@ -10,7 +10,7 @@ out.mkdir(parents=True, exist_ok=True)
 styles = E.parse(root/'PowerEditor/src/stylers.model.xml')
 for style in styles.iter():
     if style.tag in ['WidgetStyle','WordsStyle']:
-        style.set('fontName','SimSun')
+        style.set('fontName','Microsoft YaHei')
         if style.get('name') == 'Default Style': style.set('fontSize','11')
 styles.write(out/'stylers.xml',encoding='utf-8',xml_declaration=True)
 lang = E.parse(root/'PowerEditor/installer/nativeLang/chineseSimplified.xml')
@@ -38,7 +38,7 @@ for dark in (False,True):
     code = 'C7D0DD' if dark else '525A68'
     code_paper = '292F38' if dark else 'F2F4F7'
     for style in user.find('Styles'):
-        style.set('fontName','SimSun')
+        style.set('fontName','Microsoft YaHei')
         style.set('fontSize','11')
         style.set('fgColor',ink)
         style.set('bgColor',paper)
@@ -83,6 +83,6 @@ for match in re.finditer(r'IDD_PREFERENCE_SUB_(\w+) DIALOGEX.*?\nBEGIN\n(.*?)\nE
             idmatch = re.search(r'\b(ID[CD]_\w+|IDD_\w+)\b',line)
             if idmatch: items.append({'page':match[1],'control':idmatch[1]})
 assert len(items) >= 50
-manifest = {'retiredPages':10,'retiredInteractiveControls':len(items),'retiredControls':items,'retainedPages':14,'language':'简体中文','defaultFont':'宋体','markdown':'native UDL, uniform 11pt, no extra line spacing'}
+manifest = {'retiredPages':10,'retiredInteractiveControls':len(items),'retiredControls':items,'retainedPages':14,'language':'简体中文','defaultFont':'微软雅黑','markdown':'native UDL, uniform 11pt, no extra line spacing'}
 (out/'settings-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
 print(f'Prepared official zh-CN + native Markdown UDL; removed {len(items)} interactive preference controls, 14 pages remain')
