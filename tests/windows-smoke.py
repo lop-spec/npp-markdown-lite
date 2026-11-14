@@ -200,6 +200,15 @@ try:
     capture(main, out / 'native-editor-panel.png')
     (out/'smoke.json').write_text(json.dumps({'checks':checks,'count':len(checks),'retired_commands':retired,'menus':labels,'exe_bytes':exe.stat().st_size,'exe_sha256':hashlib.sha256(exe.read_bytes()).hexdigest()}, ensure_ascii=False, indent=2),encoding='utf-8')
     print('PASS',len(checks),'native editor / 80-command / real Markdown Panel checks')
+except Exception:
+    if process.poll() is None:
+        (out/'native-windows.json').write_text(json.dumps(windows(process.pid, main) if main else windows(process.pid), ensure_ascii=False, indent=2),encoding='utf-8')
+        if main:
+            try:
+                from screenshot import capture
+                capture(main,out/'failed-preview.png')
+            except Exception: pass
+    raise
 finally:
     if handle: k.CloseHandle(handle)
     if process.poll() is None:

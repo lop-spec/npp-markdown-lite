@@ -12,14 +12,14 @@ while ([DateTime]::UtcNow -lt $deadline -and -not $found) {
     foreach ($node in $nodes) {
         try {
             $current = $node.Current
-            if ($current.FrameworkId -ne 'Chrome' -and $current.ClassName -notlike '*Chrome*') { continue }
+            $isWebview = $current.FrameworkId -eq 'Chrome' -or $current.ClassName -like '*Chrome*'
             $text = $current.Name
             $pattern = $null
             if ($node.TryGetCurrentPattern([Windows.Automation.TextPattern]::Pattern,[ref]$pattern)) {
                 $text += ' ' + $pattern.DocumentRange.GetText(20000)
             }
             $records += [pscustomobject]@{type=$current.ControlType.ProgrammaticName;framework=$current.FrameworkId;class=$current.ClassName;name=$current.Name;text=$text}
-            if ($text.Contains($Needle)) { $found = $true }
+            if ($isWebview -and $text.Contains($Needle)) { $found = $true }
         } catch { }
     }
     if (-not $found) { Start-Sleep -Milliseconds 500 }

@@ -24,7 +24,24 @@ jobs:
           "[Options]`nAutoShowPanel=0`nShowToolbar=0`nShowStatusbar=0`nRenderingEngine=EDGE" | Set-Content -Encoding ascii PowerEditor/bin64/plugins/Config/NppMarkdownPanel.ini
           Copy-Item PowerEditor/bin64/notepad++.exe PowerEditor/bin64/npp-lite.exe
           New-Item -ItemType File PowerEditor/bin64/doLocalConf.xml | Out-Null
+      - name: Prepare official WebView2 runtime on ephemeral CI runner
+        shell: pwsh
+        run: |
+          $runtimeRoot = Join-Path ${env:ProgramFiles(x86)} 'Microsoft/EdgeWebView/Application'
+          $runtime = @(Get-ChildItem $runtimeRoot -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'msedgewebview2.exe') })
+          if ($runtime.Count -eq 0) {
+            $setup = Join-Path $env:RUNNER_TEMP MicrosoftEdgeWebview2Setup.exe
+            curl.exe -fsSL --retry 2 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -o $setup
+            if ($LASTEXITCODE -ne 0) { throw 'Official WebView2 bootstrapper download failed' }
+            $signature = Get-AuthenticodeSignature $setup
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notlike '*Microsoft Corporation*') { throw 'WebView2 installer signature invalid' }
+            $install = Start-Process $setup -ArgumentList '/silent','/install' -PassThru -Wait
+            if ($install.ExitCode -ne 0) { throw "WebView2 installer failed: $($install.ExitCode)" }
+          }
+          Get-ChildItem $runtimeRoot -Directory | Select-Object FullName
       - name: Verify native editing, 80 retired commands and rendered plugin
+        env:
+          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: --force-renderer-accessibility
         run: python tests/windows-smoke.py PowerEditor/bin64/npp-lite.exe test-output
       - name: Package verified EXE and complete official plugin
         shell: pwsh
@@ -53,7 +70,9 @@ jobs:
         if: always()
         with:
           name: test-evidence
-          path: test-output/*
+          path: |
+            test-output/*
+            PowerEditor/bin64/npp-lite.exe
       - uses: actions/upload-artifact@v4
         with:
           name: npp-lite-x64
