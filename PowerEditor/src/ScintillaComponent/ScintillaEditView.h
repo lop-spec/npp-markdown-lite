@@ -719,11 +719,6 @@ protected:
 	int _codepage = CP_ACP;
 
 	bool _wrapRestoreNeeded = false;
-	bool _markdownActive = false;
-	intptr_t _markdownSavedWrap = 0;
-	intptr_t _markdownSavedAscent = 0;
-	intptr_t _markdownSavedDescent = 0;
-	intptr_t _markdownSavedTechnology = 0;
 	bool _positionRestoreNeeded = false;
 	uint32_t _restorePositionRetryCount = 0;
 

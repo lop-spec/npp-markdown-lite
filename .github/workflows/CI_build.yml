@@ -1,4 +1,4 @@
-name: Build and test Markdown Lite
+name: Build and test Npp Lite
 on:
   push:
     branches: [main]
@@ -13,40 +13,42 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
       - name: Build native x64 editor
         run: msbuild PowerEditor/visual.net/notepadPlus.sln /m /p:Configuration=Release /p:Platform=x64 /p:RunCodeAnalysis=false /v:minimal
-      - name: Core tests and native plugin probe
+      - name: Build native plugin ABI probe
         shell: cmd
         run: tests\build-probes.cmd
-      - name: Real Windows editor integration tests
+      - name: Install official Markdown Panel for acceptance
         shell: pwsh
         run: |
-          $archive = Join-Path $env:RUNNER_TEMP official-notepad.zip
-          curl.exe -fsSL --retry 2 https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.9/npp.8.9.9.portable.x64.zip -o $archive
-          if ($LASTEXITCODE -ne 0) { throw 'Official plugin download failed' }
-          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLower() -ne '96a8216930f5316ed5961663b2cc92a62ec7d303b6c3077b92a7cfc38a8761b7') { throw 'Official plugin archive hash mismatch' }
-          tar.exe -xf $archive -C PowerEditor/bin64 plugins/mimeTools/mimeTools.dll
-          if ($LASTEXITCODE -ne 0) { throw 'Official plugin extraction failed' }
-          $env:LITE_OFFICIAL_PLUGIN = '1'
-          Copy-Item PowerEditor/bin64/notepad++.exe PowerEditor/bin64/npp-markdown-lite.exe
-          python tests/windows-smoke.py PowerEditor/bin64/npp-markdown-lite.exe test-output
-          if ($LASTEXITCODE -ne 0) { throw 'Light-mode integration tests failed' }
-          $env:LITE_DARK = '1'
-          python tests/windows-smoke.py PowerEditor/bin64/npp-markdown-lite.exe test-output/dark
-          if ($LASTEXITCODE -ne 0) { throw 'Dark-mode integration tests failed' }
-      - name: Size gate and release evidence
+          ./deploy/install-panel.ps1 -EditorDirectory PowerEditor/bin64
+          New-Item -ItemType Directory -Force PowerEditor/bin64/plugins/Config | Out-Null
+          "[Options]`nAutoShowPanel=0`nShowToolbar=0`nShowStatusbar=0`nRenderingEngine=EDGE" | Set-Content -Encoding ascii PowerEditor/bin64/plugins/Config/NppMarkdownPanel.ini
+          Copy-Item PowerEditor/bin64/notepad++.exe PowerEditor/bin64/npp-lite.exe
+          New-Item -ItemType File PowerEditor/bin64/doLocalConf.xml | Out-Null
+      - name: Verify native editing, 80 retired commands and rendered plugin
+        run: python tests/windows-smoke.py PowerEditor/bin64/npp-lite.exe test-output
+      - name: Package verified EXE and complete official plugin
         shell: pwsh
         run: |
-          $exe = Get-Item PowerEditor/bin64/notepad++.exe
+          $exe = Get-Item PowerEditor/bin64/npp-lite.exe
           if ($exe.Length -ge 10000000) { throw "EXE exceeds strict 10 MB limit: $($exe.Length) bytes" }
-          New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item $exe.FullName dist/npp-markdown-lite.exe
-          $hash = (Get-FileHash dist/npp-markdown-lite.exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  npp-markdown-lite.exe" | Set-Content -Encoding ascii dist/SHA256SUMS.txt
-          @{ project='Npp Markdown Lite'; version='1.0.0'; commit=$env:GITHUB_SHA; upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13'; build='GitHub Actions windows-2025 MSVC Release x64'; bytes=$exe.Length; sha256=$hash; packed=$false; run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID" } | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
+          New-Item -ItemType Directory -Force dist/portable/plugins/Config | Out-Null
+          Copy-Item $exe.FullName dist/npp-lite.exe
+          Copy-Item $exe.FullName dist/portable/npp-lite.exe
+          Copy-Item PowerEditor/bin64/plugins/NppMarkdownPanel dist/portable/plugins/ -Recurse
+          "[Options]`nAutoShowPanel=1`nShowToolbar=0`nShowStatusbar=0`nRenderingEngine=EDGE" | Set-Content -Encoding ascii dist/portable/plugins/Config/NppMarkdownPanel.ini
+          New-Item -ItemType File dist/portable/doLocalConf.xml | Out-Null
+          Copy-Item LICENSE dist/portable/LICENSE.txt
+          Copy-Item README.md dist/portable/README.md
+          Copy-Item docs/removed-commands.md dist/portable/removed-commands.md
+          Compress-Archive -Path dist/portable/* -DestinationPath dist/npp-lite-x64-portable.zip
+          $hash = (Get-FileHash dist/npp-lite.exe -Algorithm SHA256).Hash.ToLower()
+          $zipHash = (Get-FileHash dist/npp-lite-x64-portable.zip -Algorithm SHA256).Hash.ToLower()
+          @("$hash  npp-lite.exe", "$zipHash  npp-lite-x64-portable.zip") | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          @{project='Npp Lite';version='1.1.0';commit=$env:GITHUB_SHA;upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13';build='GitHub Actions windows-2025 MSVC Release x64';bytes=$exe.Length;sha256=$hash;portableSha256=$zipHash;packed=$false;retiredCommands=80;hostToolbarButtons=8;plugin='Markdown Panel 0.9.3 x64';run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
           Copy-Item test-output/smoke.json dist/
-          Copy-Item test-output/dark/smoke.json dist/smoke-dark.json
+          Copy-Item test-output/native-editor-panel.png dist/
           Copy-Item LICENSE dist/LICENSE.txt
-          if (Test-Path test-output/markdown-light.png) { Copy-Item test-output/markdown-light.png dist/ }
-          if (Test-Path test-output/dark/markdown-dark.png) { Copy-Item test-output/dark/markdown-dark.png dist/ }
+          Copy-Item docs/removed-commands.md dist/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -54,6 +56,12 @@ jobs:
           path: test-output/*
       - uses: actions/upload-artifact@v4
         with:
-          name: npp-markdown-lite-x64
-          path: dist/*
+          name: npp-lite-x64
+          path: |
+            dist/npp-lite.exe
+            dist/npp-lite-x64-portable.zip
+            dist/*.json
+            dist/*.txt
+            dist/*.md
+            dist/*.png
           if-no-files-found: error

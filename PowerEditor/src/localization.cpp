@@ -38,7 +38,7 @@
 #include "preferenceDlg.h"
 #include "resource.h"
 
-#include "MarkdownLite/MenuPositions.h"
+#include "Lite/MenuPositions.h"
 #if 0
 static constexpr MenuPosition g_menuFolderPositions[]{
 //==============================================

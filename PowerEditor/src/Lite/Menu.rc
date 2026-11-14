@@ -1,11 +1,9 @@
-// Npp Markdown Lite - GPL-3.0-or-later
-#include "MarkdownLite/MenuIds.h"
+// Npp Lite - GPL-3.0-or-later
 IDR_M30_MENU MENU
 BEGIN
     POPUP "文件(&F)"
     BEGIN
         MENUITEM "新建", IDM_FILE_NEW
-        MENUITEM "新建 Markdown", IDM_MD_NEW
         MENUITEM "打开…", IDM_FILE_OPEN
         MENUITEM "重新载入", IDM_FILE_RELOAD
         MENUITEM SEPARATOR
@@ -100,7 +98,6 @@ BEGIN
     POPUP "语言(&L)"
     BEGIN
         MENUITEM "普通文本", IDM_LANG_TEXT
-        MENUITEM "Markdown 模式", IDM_MD_MODE
         MENUITEM SEPARATOR
         MENUITEM "C / C++", IDM_LANG_CPP
         MENUITEM "CSS", IDM_LANG_CSS
@@ -125,21 +122,6 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "导入插件…", IDM_SETTING_IMPORTPLUGIN
         MENUITEM "导入主题…", IDM_SETTING_IMPORTSTYLETHEMES
-    END
-    POPUP "Markdown(&M)"
-    BEGIN
-        MENUITEM "增强排版", IDM_MD_RICH
-        MENUITEM SEPARATOR
-        MENUITEM "粗体", IDM_MD_BOLD
-        MENUITEM "斜体", IDM_MD_ITALIC
-        MENUITEM "行内代码", IDM_MD_CODE
-        MENUITEM "链接", IDM_MD_LINK
-        MENUITEM "代码块", IDM_MD_FENCE
-        MENUITEM "切换任务", IDM_MD_TASK
-        MENUITEM "对齐当前表格", IDM_MD_TABLE
-        MENUITEM SEPARATOR
-        MENUITEM "上一个标题", IDM_MD_PREV
-        MENUITEM "下一个标题", IDM_MD_NEXT
     END
     POPUP "插件(&P)"
     BEGIN

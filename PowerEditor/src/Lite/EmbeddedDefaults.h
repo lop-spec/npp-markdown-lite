@@ -1,8 +1,8 @@
-// Npp Markdown Lite - GPL-3.0-or-later
+// Npp Lite - GPL-3.0-or-later
 #pragma once
 #include <windows.h>
 #include <string>
-namespace MarkdownLite
+namespace Lite
 {
 inline bool seedDefaults(const std::wstring& directory)
 {

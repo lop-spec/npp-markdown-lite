@@ -1,53 +1,45 @@
-# Npp Markdown Lite
+# Npp Lite
 
-**Notepad++ 的非官方精简二开：原生编辑、少按钮、面向 Markdown 的源码排版。**
+Notepad++ 原生精简二开。保持原生编辑框、标签栏、查找替换、正则、列选择、多选区、分屏与 x64 插件接口，Markdown 展示只使用官方 **Markdown Panel 0.9.3** 插件。
 
-[下载 Windows x64 单 EXE](https://github.com/lop-spec/npp-markdown-lite/releases/latest) · [构建与测试](https://github.com/lop-spec/npp-markdown-lite/actions) · [设计边界](docs/design.md)
+[下载便携包（已装插件）](https://github.com/lop-spec/npp-markdown-lite/releases/latest) · [裁剪清单](docs/removed-commands.md) · [构建验证](https://github.com/lop-spec/npp-markdown-lite/actions)
 
-基于官方 [Notepad++ master 67eca42](https://github.com/notepad-plus-plus/notepad-plus-plus/commit/67eca422e60a169801a9aaeb19e285b7f27cfd13)（8.9.9 开发树，2026-11-10）。保留上游 Win32、Scintilla、Lexilla、Boost.Regex 与原生插件架构，不是 Electron、WebView 或从零仿写。仓库导入完整源代码快照，之后的修改可直接对照首个源码提交。
+## 1.1.0
 
-## 保留什么
+- 删除上一版全部自写 Markdown 文件、命令、词法器、标题字号、额外行距、表格对齐、智能列表、任务操作与配套测试。编辑区回到官方原生紧凑显示。
+- 相对 1.0.0 **新增裁剪80个原生命令**：相关主命令处理代码编译排除，默认快捷键不再注册；即使发送旧命令ID也不能触发。按命令计数，包含同一功能的不同模式，不宣称80种独立能力。详见清单。
+- 主工具栏从12键减到8键：新建、打开、保存、撤销、重做、查找、替换、换行。剪切、复制、粘贴、全部保存仍可用菜单和快捷键操作。
+- 保留原生 .NET 插件加载和停靠接口。Markdown Panel 为独立官方 DLL，不把插件实现复制进编辑器。
 
-- 原生编辑框、标签栏、原生查找替换与正则、列编辑、多选区、撤销重做、分屏、编码和换行格式。
-- 常用语言高亮、首选项、样式和快捷键设置。
-- x64 Notepad++ 原生插件加载、插件菜单、插件按钮、通知与 Scintilla 消息接口。
+## 使用
 
-主工具栏缩为 **12 个按钮**，菜单按文件、编辑、搜索、视图、编码、常用语言、设置、Markdown、插件、窗口、帮助组织。宏录制/播放、外部运行和哈希工具的主命令代码不参与编译；不携带更新器、预装插件、补全数据库或语言包。为保留原生编辑与插件接口，共用底层设施仍沿用上游，并非把整个编辑器改成只有记事本功能。
+解压便携包，双击 `npp-lite.exe`。里面已安装完整的 `plugins/NppMarkdownPanel`。打开 `.md` 后插件自动显示渲染面板；也可在「插件 → MarkdownPanel → Toggle Markdown Panel」开关。源码始终在原生编辑区可编辑，右侧是插件渲染，不是所见即所得直编。
 
-## Markdown 怎么用
+必须连同 `plugins` 目录一起传输；只复制主 EXE 不会携带插件。主 EXE 静态 CRT、未压壳，小于10,000,000字节；插件及系统运行时不计入主 EXE 大小。
 
-打开 `.md`、`.markdown`、`.mdown`、`.mkd`、`.mdwn` 即启用；未保存文档可用「文件 → 新建 Markdown」或「语言 → Markdown 模式」。
+插件使用 **.NET Framework 4.7.2+** 和 **WebView2 Runtime**，它们是系统依赖，不伪装成无运行时。普通 Markdown、表格与本地样式可离线显示；远程图片和插件默认的 Mermaid CDN 仍需要网络。插件支持点击复选框回写源码，因此不要把预览面板称为绝不修改文档。
 
-- 完整标题正文的层级字号、原生标题折叠、粗体、斜体、链接、整行引用、行内代码和围栏代码块背景；适配浅色与深色模式。
-- 使用原生等宽字体和 DirectWrite 支持的编辑器绘制路径；自动软换行、增加行距。切到其他文件恢复原来的换行和行距。
-- Enter 续写列表、编号、任务和引用，空项目退出；围栏代码中不自动补列表。
-- 「Markdown」菜单提供粗体、斜体、代码、链接、围栏、任务切换、表格对齐、前后标题跳转。可在原生快捷键设置中自行绑定，不覆盖已有编辑快捷键。
-- 「增强排版」可以切回统一字号；源文始终可见，不把光标前后的字符偷偷隐藏。
+没有添加图片粘贴、自写富文本、自动上传、预处理器或后处理器。保留插件原样，下载来源、版本和SHA256固定在 `deploy/plugin-lock.json`。
 
-**显示本身不改文件，也不改剪贴板。** 只有明确执行编辑命令才修改源码，支持撤销。表格对齐仅对当前标准管道表格执行，保留转义管道与行内代码；中文按常见等宽列宽估算。不是 HTML 渲染器：不加载图片，不执行 HTML/脚本，不支持完整 CommonMark/GFM 排版；代码块保留原文，不做嵌套语言解析，复杂 emoji 的显示宽度取决于系统字体。
+## 设置隔离
 
-## 单 EXE 与插件
-
-下载 `npp-markdown-lite.exe` 后直接运行，无安装器、无自解压壳、无第三方运行时。首次运行会将内嵌的默认 XML 写入独立的 `%APPDATA%\NppMarkdownLite`，以后只创建缺失文件，不覆盖自定义设置。窗口类与实例锁独立，不接管官方 Notepad++ 进程或配置。支持上游 `-settingsDir=` 与便携设置机制。
-
-第三方 **x64** 插件可以通过「设置 → 导入插件」导入，或放在 EXE 同目录 `plugins\插件名\插件名.dll`，重启后加载。仅加载自己信任的 DLL；插件是在本机执行的原生程序。没有捆绑在线插件商店或下载更新器。测试探针覆盖初始化、启动通知、菜单注册和原生编辑控件调用；另外使用官方 8.9.9 的 mimeTools 验证实际 Base64 编解码。不承诺所有第三方插件均兼容；硬编码官方窗口类名或完整菜单位置的插件需要适配。
+便携包含 `doLocalConf.xml`，设置保存在当前解压目录；不含该标记的裸 EXE 使用 `%APPDATA%/NppLite`。首次启动从EXE内嵌资源写入缺失的默认XML，不覆盖已有设置。不覆盖官方 Notepad++ 或旧 NppMarkdownLite 的配置。独立窗口类 `NppLite`，可并行运行。
 
 ## 构建与验证
 
-GitHub Actions 使用 MSVC Release x64 和静态 CRT 构建发行物。**未压壳 EXE 必须小于 10,000,000 字节**，超过即失败，不以压缩包体积冒充。
+基于官方 Notepad++ 8.9.9 开发树 `67eca422e60a169801a9aaeb19e285b7f27cfd13`，保留完整源码快照和上游版权。
 
-开发构建沿用上游 `BUILD.md`。测试入口：
+发行文件由 GitHub Actions 的 MSVC Release x64 构建；原生测试覆盖基础编辑、矩形选择、80项退役命令、插件ABI，以及官方 Markdown Panel 的真实 WebView2 渲染和编辑后更新。超出10MB或验证失败不发版。测试探针DLL不随便携包分发。
 
 ```bat
 msbuild PowerEditor\visual.net\notepadPlus.sln /m /p:Configuration=Release /p:Platform=x64
 tests\build-probes.cmd
-python tests\windows-smoke.py PowerEditor\bin64\notepad++.exe test-output
+powershell -File deploy\install-panel.ps1 -EditorDirectory PowerEditor\bin64
+python tests\windows-smoke.py PowerEditor\bin64\npp-lite.exe test-output
 ```
 
-集成测试会启动真实 GUI；在个人工作电脑上应运行于私有隐藏桌面。测试探针 DLL **不随发行物分发**。发行附带源码提交、体积、SHA256、构建链接与测试结果。
+真实GUI测试只在CI或私有隐藏桌面运行，避免干扰日常窗口。发行附构建提交、体积、SHA256、裁剪清单和测试证据。
 
-## 许可证与归属
+## 许可证
 
-GPL-3.0-or-later，见 [LICENSE](LICENSE)。Notepad++ 原作者 Don Ho 及各上游贡献者的版权和许可证保持不变。Scintilla、Lexilla、Boost 等组件沿用各自许可证。项目为独立、非官方发行，不代表或冒充 Notepad++ 官方。
-
-新增代码与集成由 AI 编码助手（OpenAI GPT，通过 Pi）辅助完成，源码和测试均公开。
+编辑器 GPL-3.0-or-later，保留 Don Ho 与上游贡献者版权及各组件许可证；非官方发行，不代表 Notepad++ 官方。Markdown Panel 为 Mohzy83 的 MIT 项目，便携包内保留完整官方许可证及依赖。新增修改由OpenAI GPT通过Pi辅助完成。

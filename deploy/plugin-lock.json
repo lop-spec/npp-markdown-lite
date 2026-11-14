@@ -1,0 +1,11 @@
+{
+  "repository": "mohzy83/NppMarkdownPanel",
+  "tag": "0.9.3",
+  "version": "0.9.3.0",
+  "asset": "NppMarkdownPanel-0.9.3.0-x64.zip",
+  "url": "https://github.com/mohzy83/NppMarkdownPanel/releases/download/0.9.3/NppMarkdownPanel-0.9.3.0-x64.zip",
+  "sha256": "0366a693e89805edc8cb276d6ad713d892c8f4ec98b2f6570c8eaeb6deb1c3a8",
+  "folder": "NppMarkdownPanel",
+  "license": "MIT",
+  "requirements": [".NET Framework >= 4.7.2", "Microsoft Edge WebView2 Runtime"]
+}

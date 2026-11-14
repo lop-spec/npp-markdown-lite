@@ -1,5 +1,4 @@
-"""Run only on a CI runner or an inherited private/hidden Windows desktop."""
-import base64
+"""Run on CI or an inherited private desktop; never activates the user's desktop."""
 import ctypes as C
 from ctypes import wintypes as W
 import hashlib
@@ -8,20 +7,16 @@ import os
 from pathlib import Path
 import re
 import shutil
-import struct
 import subprocess
 import sys
 import tempfile
 import time
-import zlib
-
 root = Path(__file__).resolve().parents[1]
 exe = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 out.mkdir(parents=True, exist_ok=True)
 u = C.WinDLL('user32', use_last_error=True)
 k = C.WinDLL('kernel32', use_last_error=True)
-g = C.WinDLL('gdi32', use_last_error=True)
 u.SendMessageTimeoutW.argtypes = [W.HWND, W.UINT, C.c_size_t, C.c_ssize_t, W.UINT, W.UINT, C.POINTER(C.c_size_t)]
 u.SendMessageTimeoutW.restype = C.c_ssize_t
 u.GetMenu.argtypes = [W.HWND]
@@ -49,36 +44,31 @@ k.CloseHandle.argtypes = [W.HANDLE]
 CALLBACK = C.WINFUNCTYPE(W.BOOL, W.HWND, C.c_ssize_t)
 u.EnumWindows.argtypes = [CALLBACK, C.c_ssize_t]
 u.EnumChildWindows.argtypes = [W.HWND, CALLBACK, C.c_ssize_t]
-
 constants = {}
-for name in ['scintilla/include/Scintilla.h', 'PowerEditor/src/menuCmdID.h', 'PowerEditor/src/resource.h', 'PowerEditor/src/MarkdownLite/MenuIds.h']:
+for name in ['scintilla/include/Scintilla.h', 'PowerEditor/src/menuCmdID.h', 'PowerEditor/src/resource.h']:
     for line in (root / name).read_text(encoding='utf-8-sig').splitlines():
         m = re.match(r'\s*#define\s+(\w+)\s+([A-Za-z_0-9 +(),-]+)', line)
-        if m:
-            expression = m[2].strip()
-            for key in re.findall(r'\b[A-Za-z_]\w*\b', expression):
-                if key in constants:
-                    expression = re.sub(r'\b' + key + r'\b', str(constants[key]), expression)
-            if re.fullmatch(r'[0-9 +(),-]+', expression):
-                try:
-                    value = eval(expression, {'__builtins__': {}})
-                    if isinstance(value, int): constants[m[1]] = value
-                except Exception: pass
+        if not m: continue
+        expression = m[2].strip()
+        for key in re.findall(r'\b[A-Za-z_]\w*\b', expression):
+            if key in constants: expression = re.sub(r'\b' + key + r'\b', str(constants[key]), expression)
+        if re.fullmatch(r'[0-9 +(),-]+', expression):
+            try:
+                value = eval(expression, {'__builtins__': {}})
+                if isinstance(value, int): constants[m[1]] = value
+            except Exception: pass
 
 def send(hwnd, message, w=0, l=0):
     if isinstance(message, str): message = constants[message]
     result = C.c_size_t()
-    if not u.SendMessageTimeoutW(hwnd, message, w, l, 2, 5000, C.byref(result)):
-        raise OSError(C.get_last_error(), 'SendMessageTimeout')
+    if not u.SendMessageTimeoutW(hwnd, message, w, l, 2, 5000, C.byref(result)): raise OSError(C.get_last_error(), 'SendMessageTimeout')
     return C.c_ssize_t(result.value).value
-
 checks = []
 def check(ok, label):
     if not ok:
         (out / 'failure.json').write_text(json.dumps({'failure': label, 'passed': checks}, ensure_ascii=False, indent=2), encoding='utf-8')
         raise AssertionError(label)
     checks.append(label)
-
 def windows(pid, parent=None):
     found = []
     @CALLBACK
@@ -93,29 +83,21 @@ def windows(pid, parent=None):
     if parent: u.EnumChildWindows(parent, visit, 0)
     else: u.EnumWindows(visit, 0)
     return found
-
 work = Path(tempfile.mkdtemp(prefix='npp-lite-smoke-'))
 profile = work / 'settings'
 profile.mkdir()
-dark = os.environ.get('LITE_DARK') == '1'
-if dark:
-    config = (root / 'PowerEditor/src/MarkdownLite/config.xml').read_text(encoding='utf-8')
-    config = config.replace('<GUIConfigs>', '<GUIConfigs><GUIConfig name="DarkMode" enable="yes" colorTone="0" enableWindowsMode="no" />')
-    (profile / 'config.xml').write_text(config, encoding='utf-8')
 fixture = work / 'sample.md'
-sample = '# Markdown 原生编辑\n\n## 标题层级\n\n正文 **粗体** 和 *斜体*，以及 `code()`。\n\n> 引用保留原文\n\n- [ ] 待办事项\n- [x] 已完成\n\n[链接](https://example.com)\n\n```python\nprint("中文内容")\n```\n\n| 名称 | 值 |\n| --- | --- |\n| 中文 | abc |\n'
+sample = '# NPP-LITE-PREVIEW-SENTINEL\n\nOriginal Markdown source.\n\n| Name | Value |\n| --- | --- |\n| hello | world |\n'
 fixture.write_bytes(sample.encode('utf-8'))
 before = hashlib.sha256(fixture.read_bytes()).hexdigest()
 process = subprocess.Popen([str(exe), '-multiInst', '-nosession', '-settingsDir=' + str(profile), str(fixture)], creationflags=0x08000000)
 handle = None
-main = None
 try:
-    deadline = time.monotonic() + 30
+    deadline = time.monotonic() + 40
     while time.monotonic() < deadline:
         if process.poll() is not None: raise RuntimeError('application exited ' + str(process.returncode))
-        candidates = [hwnd for hwnd, name in windows(process.pid) if name == 'NppMarkdownLite']
-        if candidates:
-            main = candidates[0]
+        main = next((hwnd for hwnd, name in windows(process.pid) if name == 'NppLite'), None)
+        if main:
             edits = [hwnd for hwnd, name in windows(process.pid, main) if name == 'Scintilla' and u.IsWindowVisible(hwnd)]
             if edits and send(edits[0], 'SCI_GETTEXTLENGTH') == len(sample.encode('utf-8')): break
         time.sleep(0.1)
@@ -123,7 +105,6 @@ try:
     sci = edits[0]
     handle = k.OpenProcess(0x438, False, process.pid)
     if not handle: raise OSError(C.get_last_error(), 'OpenProcess')
-
     def pointer_message(hwnd, message, data=None, capacity=None, w=0):
         size = capacity if capacity else len(data)
         memory = k.VirtualAllocEx(handle, None, size, 0x3000, 4)
@@ -139,39 +120,18 @@ try:
                 return local.raw
             return result
         finally: k.VirtualFreeEx(handle, memory, 0, 0x8000)
-
     def text():
         length = send(sci, 'SCI_GETTEXTLENGTH') + 1
         return pointer_message(sci, 'SCI_GETTEXT', capacity=length, w=length)[:-1].decode('utf-8')
-
     def set_text(value):
         send(sci, 'SCI_SETREADONLY', 0)
         pointer_message(sci, 'SCI_SETTEXT', value.encode('utf-8') + b'\0')
         send(sci, 'SCI_EMPTYUNDOBUFFER')
-        send(sci, 'SCI_COLOURISE', 0, -1)
-
     def command(name): send(main, 0x111, constants[name])
-    check(send(sci, 'SCI_GETLEXER') == 98, 'native Markdown lexer')
-    check(send(sci, 'SCI_STYLEGETSIZE', 6) > send(sci, 'SCI_STYLEGETSIZE', 0), 'larger heading font')
-    send(sci, 'SCI_COLOURISE', 0, -1)
-    check(send(sci, 'SCI_STYLEGETBOLD', 2) == 1, 'bold emphasis style')
-    check(send(sci, 'SCI_GETSTYLEAT', 3) == 6, 'heading body receives heading style')
-    check(send(sci, 'SCI_GETFOLDLEVEL', 0) & 0x2000, 'headings use original folding margin')
-    code_at = sample.encode('utf-8').index(b'print(')
-    check(send(sci, 'SCI_GETSTYLEAT', code_at) == 25, 'fenced code has dedicated full-line style')
-    check(send(sci, 'SCI_GETWRAPMODE') != 0, 'Markdown soft wrap')
-    if dark:
-        background = send(sci, 'SCI_STYLEGETBACK', 0)
-        check((background & 255) < 80 and ((background >> 8) & 255) < 80, 'actual dark Markdown background')
-        check(send(sci, 'SCI_GETCARETFORE') == send(sci, 'SCI_STYLEGETFORE', 0), 'dark caret remains visible')
-        check(send(sci, 'SCI_STYLEGETBACK', 33) == background, 'dark line-number margin matches editor')
-        check((send(sci, 'SCI_GETCARETLINEBACK') & 255) < 80, 'dark current-line highlight is not light-theme color')
-    check(send(sci, 'SCI_GETMODIFY') == 0 and text() == sample, 'opening and styling is byte-preserving')
-    check(all((profile / x).exists() for x in ['config.xml', 'langs.xml', 'stylers.xml']), 'single EXE seeds all defaults')
-    menu = u.GetMenu(main)
-    labels = []
-    all_ids = []
-    menu_items = []
+    check(text() == sample and send(sci, 'SCI_GETMODIFY') == 0, 'opening MD preserves native editable source')
+    check(send(sci, 'SCI_GETLEXER') != 98 and send(sci, 'SCI_GETEXTRAASCENT') == 0 and send(sci, 'SCI_GETEXTRADESCENT') == 0, 'no custom Markdown lexer or extra line spacing')
+    check(not (root / 'PowerEditor/src/MarkdownLite').exists(), 'custom Markdown source directory deleted')
+    labels, items = [], []
     def inspect(menu, top=False):
         for i in range(u.GetMenuItemCount(menu)):
             name = C.create_unicode_buffer(512)
@@ -179,121 +139,62 @@ try:
             if top: labels.append(name.value)
             child = u.GetSubMenu(menu, i)
             if child: inspect(child)
-            else:
-                item_id = u.GetMenuItemID(menu, i)
-                all_ids.append(item_id)
-                menu_items.append((name.value, item_id))
-    inspect(menu, True)
-    check(len(labels) == 14, 'compact top menu positions')
-    check(all(constants[x] not in all_ids for x in ['IDM_MACRO_STARTRECORDINGMACRO', 'IDM_EXECUTE', 'IDM_TOOL_MD5_GENERATE']), 'retired features absent from menus')
-    check(constants['IDM_SETTING_OPENPLUGINSDIR'] in all_ids, 'plugin menu retained')
+            else: items.append((name.value, u.GetMenuItemID(menu, i)))
+    inspect(u.GetMenu(main), True)
+    check(len(labels) == 13 and not any('Markdown' in label for label in labels), 'no built-in Markdown top menu')
+    ids = {item_id for _, item_id in items}
+    retired = re.findall(r'^\s*(IDM_\w+)', (root / 'PowerEditor/src/Lite/RetiredCommands.h').read_text(encoding='utf-8'), re.M)
+    check(len(retired) == 80 and len(set(retired)) == 80, '80 additional native commands uniquely enumerated')
+    set_text('zeta\nAlpha\n42\n- [ ] task')
+    send(sci, 'SCI_SETSEL', 0, 4)
+    snapshot = text()
+    for name in retired:
+        check(constants[name] not in ids, 'absent menu: ' + name)
+        send(main, 0x111, constants[name])
+        check(text() == snapshot and send(sci, 'SCI_GETSELECTIONSTART') == 0 and send(sci, 'SCI_GETSELECTIONEND') == 4, 'retired dispatch inert: ' + name)
+    for old_md in range(49800, 49812): send(main, 0x111, old_md)
+    check(text() == snapshot, 'all 12 removed Markdown command IDs remain inert')
     toolbar = [hwnd for hwnd, name in windows(process.pid, main) if name == 'ToolbarWindow32']
-    check(bool(toolbar) and 12 <= send(toolbar[0], 0x418) <= 16, 'compact native toolbar')
-    check(u.GetPropW(main, 'LitePluginReady') == 1, 'real native plugin receives NPPN_READY')
-
-    # The next screenshot is produced before destructive test edits. PrintWindow
-    # renders this test window only; it never captures the user's desktop.
-    try:
-        from screenshot import capture
-        if not u.SetWindowPos(main, None, 0, 0, 2304, 1536, 0x414): raise OSError(C.get_last_error(), 'test window resize')
-        time.sleep(0.4)
-        capture(main, out / ('markdown-dark.png' if dark else 'markdown-light.png'))
-    except Exception as error:
-        (out / 'screenshot-error.txt').write_text(str(error), encoding='utf-8')
-
-    set_text('hello')
-    send(sci, 'SCI_SETSEL', 0, 5)
-    command('IDM_MD_BOLD')
-    check(text() == '**hello**', 'bold wraps exact source selection')
+    check(bool(toolbar) and send(toolbar[0], 0x418) == 10, '8 host toolbar buttons plus 2 separators')
+    send(sci, 'SCI_SETSEL', 0, 4)
+    pointer_message(sci, 'SCI_REPLACESEL', b'test\0')
+    check(text().startswith('test'), 'native selection replacement')
     send(sci, 'SCI_UNDO')
-    check(text() == 'hello', 'format command is one undo unit')
-    set_text('- [ ] task')
-    command('IDM_MD_TASK')
-    check(text() == '- [x] task', 'task checkbox toggles source')
-    send(sci, 'SCI_SETREADONLY', 1)
-    command('IDM_MD_TASK')
-    check(text() == '- [x] task', 'readonly source protected')
-    set_text('| 名称 | value |\n| --- | --- |\n| 中文 | abc |')
-    command('IDM_MD_TABLE')
-    aligned = text()
-    check('中文' in aligned and '| 名称 |' in aligned, 'Chinese table preserves content')
-    command('IDM_MD_TABLE')
-    check(text() == aligned, 'table format is idempotent')
-    send(sci, 'SCI_UNDO')
-    # No auto-save or read-time formatting is allowed.
-    check(hashlib.sha256(fixture.read_bytes()).hexdigest() == before, 'original disk file never modified by display or commands')
-    for value, suffix in [('- item', '- '), ('9. item', '10. '), ('- [x] done', '- [ ] '), ('> quote', '> ')]:
-        set_text(value)
-        send(sci, 'SCI_GOTOPOS', len(value))
-        send(sci, 'SCI_NEWLINE')
-        check(text().endswith('\r\n' + suffix) or text().endswith('\n' + suffix), 'Enter continuation: ' + value)
-    set_text('- ')
-    send(sci, 'SCI_GOTOPOS', 2)
-    send(sci, 'SCI_NEWLINE')
-    check(text() == '', 'empty list exits cleanly')
-    set_text('```text\n- code')
-    send(sci, 'SCI_GOTOPOS', len('```text\n- code'))
-    send(sci, 'SCI_NEWLINE')
-    check(not text().endswith('- '), 'code fence has no list continuation')
-    set_text('````md\n```\n# code heading\n````\n\n# real heading')
-    code_at = text().encode('utf-8').index(b'# code')
-    real_at = text().encode('utf-8').index(b'# real')
-    check(send(sci, 'SCI_GETSTYLEAT', code_at) == 25 and send(sci, 'SCI_GETSTYLEAT', real_at + 3) == 6, 'variable-length fences close correctly without leaking styles')
-    set_text('# first\n\n```md\n# not a heading\n```\n\n## second')
-    send(sci, 'SCI_GOTOPOS', 0)
-    command('IDM_MD_NEXT')
-    check(send(sci, 'SCI_LINEFROMPOSITION', send(sci, 'SCI_GETCURRENTPOS')) == 6, 'heading navigation skips fenced code')
-    set_text('---\ntitle: sample\n---\n\n# heading')
-    check(send(sci, 'SCI_GETSTYLEAT', text().encode('utf-8').index(b'# heading') + 3) == 6, 'front matter ends before heading styling')
-    set_text('```md\n# inside\n```\n\n# outside')
-    send(sci, 'SCI_SETTARGETRANGE', 0, 3)
-    pointer_message(sci, 'SCI_REPLACETARGET', b'~~~\0', w=3)
-    send(sci, 'SCI_COLOURISE', 0, 4)
-    check(send(sci, 'SCI_GETSTYLEAT', text().encode('utf-8').index(b'# outside')) == 25, 'incremental fence edit restyles following section')
-    send(sci, 'SCI_UNDO')
-    send(sci, 'SCI_COLOURISE', 0, 4)
-    check(send(sci, 'SCI_GETSTYLEAT', text().encode('utf-8').index(b'# outside') + 3) == 6, 'undo restores incremental fence boundary')
-    set_text('# title\n\nbody\n\n## child\nmore')
-    send(sci, 'SCI_FOLDLINE', 0, 2)
-    check(send(sci, 'SCI_GETLINEVISIBLE', 2) == 0, 'native heading collapse hides section')
-    send(sci, 'SCI_FOLDLINE', 0, 2)
-    check(send(sci, 'SCI_GETLINEVISIBLE', 2) == 1, 'native heading expansion restores section')
-    command('IDM_MD_RICH')
-    check(send(sci, 'SCI_STYLEGETBOLD', 2) == 0, 'source appearance toggle')
-    command('IDM_MD_RICH')
-    check(send(sci, 'SCI_STYLEGETBOLD', 2) == 1, 'rich appearance restored')
+    check(text() == snapshot, 'native undo retained')
+    send(sci, 'SCI_SETSELECTIONMODE', 1)
+    check(send(sci, 'SCI_GETSELECTIONMODE') == 1, 'native rectangular selection retained')
+    send(sci, 'SCI_SETSELECTIONMODE', 0)
+    check(u.GetPropW(main, 'LitePluginReady') == 1, 'native plugin ABI startup notification')
+    probe = next((i for name, i in items if name == 'Probe command'), None)
+    check(probe is not None, 'native plugin menu registration')
     set_text('')
-    plugin_id = next((item_id for name, item_id in menu_items if name == 'Probe command'), None)
-    check(plugin_id is not None, 'plugin command registered')
-    send(main, 0x111, plugin_id)
-    check(text() == 'plugin-ok', 'plugin command edits original Scintilla')
-    if os.environ.get('LITE_OFFICIAL_PLUGIN') == '1':
-        encode = next((item_id for name, item_id in menu_items if name.replace('&', '').split('\t')[0].strip() == 'Base64 Encode'), None)
-        decode = next((item_id for name, item_id in menu_items if name.replace('&', '').split('\t')[0].strip() == 'Base64 Decode'), None)
-        check(encode is not None and decode is not None, 'official mimeTools registers native commands')
-        set_text('hello')
-        send(sci, 'SCI_SELECTALL')
-        send(main, 0x111, encode)
-        encoded = text()
-        # MIME Tools 3.1 defaults to unpadded Base64; both padded and unpadded
-        # forms encode the same bytes. This checks semantics, not an old UI default.
-        check(base64.b64decode(encoded + '=' * (-len(encoded) % 4)) == b'hello', 'official mimeTools Base64 encode works: ' + repr(encoded))
-        send(sci, 'SCI_SELECTALL')
-        send(main, 0x111, decode)
-        check(text() == 'hello', 'official mimeTools Base64 decode works')
-    send(sci, 'SCI_SETSAVEPOINT')
-    command('IDM_FILE_NEW')
-    check(send(sci, 'SCI_GETLEXER') != 98, 'normal document restores native lexer')
-    check(send(sci, 'SCI_GETWRAPMODE') == 0 and send(sci, 'SCI_GETEXTRAASCENT') == 0, 'normal document restores wrapping and spacing')
-    command('IDM_MD_MODE')
-    check(send(sci, 'SCI_GETLEXER') == 98, 'unsaved Markdown mode supported')
-    command('IDM_MD_MODE')
-    check(send(sci, 'SCI_GETLEXER') != 98, 'Markdown mode can be disabled')
-    (out / 'smoke.json').write_text(json.dumps({'checks': checks, 'count': len(checks), 'menus': labels, 'exe_bytes': exe.stat().st_size, 'exe_sha256': hashlib.sha256(exe.read_bytes()).hexdigest()}, ensure_ascii=False, indent=2), encoding='utf-8')
-    print('PASS', len(checks), 'Windows integration checks')
+    send(main, 0x111, probe)
+    check(text() == 'plugin-ok', 'native plugin edits original Scintilla')
+    panel = next((i for name, i in items if 'Toggle' in name and 'Markdown Panel' in name.replace('&','')), None)
+    check(panel is not None, 'official Markdown Panel menu registered')
+    set_text(sample)
+    send(main, 0x111, panel)
+    time.sleep(3)
+    check(any('WindowsForms' in name for _, name in windows(process.pid, main)), 'official Markdown Panel creates native docked form')
+    u.SetWindowPos(main, None, 0, 0, 1536, 1024, 0x414)
+    def verify_preview(needle, filename):
+        result = subprocess.run(['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(root/'tests/preview-uia.ps1'),'-Window',str(main),'-Needle',needle,'-Output',str(out/filename)], capture_output=True, timeout=60, creationflags=0x08000000)
+        if result.returncode: print(result.stdout.decode('utf-8',errors='replace'), result.stderr.decode('utf-8',errors='replace'))
+        check(result.returncode == 0, 'WebView2 rendered document: ' + needle)
+    verify_preview('NPP-LITE-PREVIEW-SENTINEL', 'panel-initial.json')
+    check(text() == sample, 'panel preview does not rewrite Markdown source')
+    set_text(sample.replace('PREVIEW-SENTINEL', 'EDIT-UPDATED'))
+    verify_preview('NPP-LITE-EDIT-UPDATED', 'panel-updated.json')
+    check(hashlib.sha256(fixture.read_bytes()).hexdigest() == before, 'preview and editing leave disk untouched until save')
+    from screenshot import capture
+    u.SetWindowPos(main, None, 0, 0, 2304, 1536, 0x414)
+    time.sleep(1)
+    capture(main, out / 'native-editor-panel.png')
+    (out/'smoke.json').write_text(json.dumps({'checks':checks,'count':len(checks),'retired_commands':retired,'menus':labels,'exe_bytes':exe.stat().st_size,'exe_sha256':hashlib.sha256(exe.read_bytes()).hexdigest()}, ensure_ascii=False, indent=2),encoding='utf-8')
+    print('PASS',len(checks),'native editor / 80-command / real Markdown Panel checks')
 finally:
     if handle: k.CloseHandle(handle)
     if process.poll() is None:
         process.kill()
         process.wait(timeout=10)
-    shutil.rmtree(work, ignore_errors=True)
+    shutil.rmtree(work,ignore_errors=True)

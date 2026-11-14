@@ -698,7 +698,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE /*hPrevInstance
 
 	bool TheFirstOne = true;
 	::SetLastError(NO_ERROR);
-	::CreateMutex(NULL, false, L"nppMarkdownLiteInstance");
+	::CreateMutex(NULL, false, L"nppLiteInstance");
 	if (::GetLastError() == ERROR_ALREADY_EXISTS)
 		TheFirstOne = false;
 

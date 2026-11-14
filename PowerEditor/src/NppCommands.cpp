@@ -38,7 +38,7 @@
 #include "FindReplaceDlg.h"
 #include "Notepad_plus.h"
 #include "Notepad_plus_Window.h"
-#include "MarkdownLite/MarkdownView.h"
+#include "Lite/RetiredCommands.h"
 #include "Notepad_plus_msgs.h"
 #include "NppConstants.h"
 #include "NppDarkMode.h"
@@ -157,27 +157,7 @@ void Notepad_plus::macroPlayback(Macro macro, std::vector<Document>* pDocs4EndUA
 
 void Notepad_plus::command(int id)
 {
-	if (id == IDM_MD_NEW)
-	{
-		fileNew();
-		_pEditView->getCurrentBuffer()->setMarkdownForced(true);
-		const wstring markdownName = wstring(_pEditView->getCurrentBuffer()->getFileName()) + L".md";
-		fileRenameUntitledPluginAPI(_pEditView->getCurrentBufferID(), markdownName.c_str());
-		_pEditView->defineDocType(L_TEXT);
-		setLangStatus(L_TEXT);
-		return;
-	}
-	if (id == IDM_MD_MODE || id == IDM_MD_RICH)
-	{
-		Buffer* buffer = _pEditView->getCurrentBuffer();
-		if (id == IDM_MD_MODE) buffer->setMarkdownForced(!buffer->isMarkdownDocument());
-		else buffer->setMarkdownRich(!buffer->markdownRich());
-		_pEditView->defineDocType(buffer->getLangType());
-		setLangStatus(buffer->getLangType());
-		return;
-	}
-	if (_pEditView->getCurrentBuffer()->isMarkdownDocument() && MarkdownLite::editCommand(*_pEditView, id)) return;
-	if ((id >= IDM_MD_NEW && id <= IDM_MD_NEXT) || (id >= ID_MACRO && id < ID_MACRO_LIMIT) || (id >= ID_USER_CMD && id < ID_USER_CMD_LIMIT) || id == IDC_EDIT_TOGGLEMACRORECORDING) return;
+	if (Lite::isRetiredCommand(id) || (id >= 49800 && id <= 49811) || (id >= ID_MACRO && id < ID_MACRO_LIMIT) || (id >= ID_USER_CMD && id < ID_USER_CMD_LIMIT) || id == IDC_EDIT_TOGGLEMACRORECORDING) return;
 	switch (id)
 	{
 		case IDM_FILE_NEW:
@@ -186,6 +166,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#if 0 // Lite: date/time insertion commands removed.
 		case IDM_EDIT_INSERT_DATETIME_SHORT:
 		case IDM_EDIT_INSERT_DATETIME_LONG:
 		{
@@ -240,6 +221,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#endif
 		case IDM_FILE_OPEN:
 		{
 			fileOpen();
@@ -483,6 +465,7 @@ void Notepad_plus::command(int id)
 			fileSaveSession();
 			break;
 
+#if 0 // Lite: printing commands removed.
 		case IDM_FILE_PRINTNOW :
 			filePrint(false);
 			break;
@@ -491,6 +474,7 @@ void Notepad_plus::command(int id)
 			filePrint(true);
 			break;
 
+#endif
 		case IDM_FILE_EXIT:
 			::PostMessage(_pPublicInterface->getHSelf(), WM_CLOSE, 0, 0);
 			break;
@@ -729,6 +713,8 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#if 0 // Lite: selected-path launch, redaction, web search, HTML/RTF paste,
+// Begin/End Select and every built-in line sort excluded from this binary.
 		case IDM_EDIT_REDACT_SELECTION:
 		{
 			_pEditView->execute(SCI_BEGINUNDOACTION);
@@ -1102,6 +1088,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#endif
 		case IDM_EDIT_BLANKLINEABOVECURRENT:
 		{
 			_pEditView->insertNewLineAboveCurrentLine();
@@ -1114,6 +1101,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#if 0 // Lite: character and clipboard-history panels removed.
 		case IDM_EDIT_CHAR_PANEL:
 		{
 			if (_pAnsiCharPanel && (!_pAnsiCharPanel->isClosed()))
@@ -1148,6 +1136,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#endif
 		case IDM_VIEW_SWITCHTO_DOCLIST:
 		{
 			if (_pDocumentListPanel && _pDocumentListPanel->isVisible())
@@ -1741,6 +1730,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#if 0 // Lite: five-colour styling, navigation and clipboard export removed.
 		case IDM_SEARCH_MARKALLEXT1 :
 		case IDM_SEARCH_MARKALLEXT2 :
 		case IDM_SEARCH_MARKALLEXT3 :
@@ -1919,6 +1909,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#endif
 		case IDM_SEARCH_GOTOLINE:
 		{
 			bool isFirstTime = !_goToLineDlg.isCreated();
@@ -1928,6 +1919,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#if 0 // Lite: character-range search removed; normal/regex find retained.
 		case IDM_SEARCH_FINDCHARINRANGE :
 		{
 			bool isFirstTime = !_findCharsInRangeDlg.isCreated();
@@ -1937,6 +1929,7 @@ void Notepad_plus::command(int id)
 		}
 		break;
 
+#endif
 		case IDM_EDIT_COLUMNMODETIP :
 		{
 			_nativeLangSpeaker.messageBox("ColumnModeTip",
@@ -2197,6 +2190,7 @@ void Notepad_plus::command(int id)
             _pEditView->convertSelectedTextToLowerCase();
 			break;
 
+#if 0 // Lite: niche case variants removed; upper/lower retained.
 		case IDM_EDIT_PROPERCASE_FORCE:
 			_pEditView->convertSelectedTextToNewerCase(PROPERCASE_FORCE);
 			break;
@@ -2221,6 +2215,7 @@ void Notepad_plus::command(int id)
 			_pEditView->convertSelectedTextToNewerCase(RANDOMCASE);
 			break;
 
+#endif
 		case IDM_EDIT_BLOCK_COMMENT:
 			doBlockComment(cm_toggle);
  			break;
@@ -2408,6 +2403,7 @@ void Notepad_plus::command(int id)
 		break;
 
 
+#if 0 // Lite: destructive bookmark batch operations removed.
 		case IDM_SEARCH_CUTMARKEDLINES :
 			cutMarkedLines();
 			break;
@@ -2432,6 +2428,7 @@ void Notepad_plus::command(int id)
 			inverseMarks();
 			break;
 
+#endif
 	    case IDM_VIEW_ALWAYSONTOP:
 		{
 			int check = (::GetMenuState(_mainMenuHandle, id, MF_BYCOMMAND) == MF_CHECKED)?MF_UNCHECKED:MF_CHECKED;

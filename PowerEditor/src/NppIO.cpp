@@ -2003,22 +2003,16 @@ bool Notepad_plus::fileSaveAs(BufferID bufferID, bool isSaveCopy)
 
 	CustomFileDialog fDlg(_pPublicInterface->getHSelf());
 
-	const bool markdown = buf->isMarkdownDocument();
-	const bool defaultAllTypes = !markdown && NppParameters::getInstance().getNppGUI()._setSaveDlgExtFiltToAllTypes;
-	if (markdown)
-	{
-		fDlg.setExtFilter(L"Markdown", { L".md", L".markdown", L".mdown", L".mkd", L".mdwn" });
-		fDlg.setExtFilter(L"All types", L".*");
-		fDlg.setDefExt(L"md");
-		fDlg.setExtIndex(0);
-	}
-	else
-	{
-		fDlg.setExtFilter(L"All types", L".*");
-		const int langTypeIndex = setFileOpenSaveDlgFilters(fDlg, false, buf->getLangType());
-		fDlg.setExtIndex(langTypeIndex + 1);
-	}
+	fDlg.setExtFilter(L"All types", L".*");
+
+	LangType langType = buf->getLangType();
+
+	const bool defaultAllTypes = NppParameters::getInstance().getNppGUI()._setSaveDlgExtFiltToAllTypes;
+	const int langTypeIndex = setFileOpenSaveDlgFilters(fDlg, false, langType);
+	
 	fDlg.setDefFileName(buf->getFileName());
+
+	fDlg.setExtIndex(langTypeIndex + 1); // +1 for "All types"
 
 	fDlg.setSaveAsCopy(isSaveCopy);
 

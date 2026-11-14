@@ -105,7 +105,7 @@ enum tb_stat {tb_saved, tb_unsaved, tb_ro, tb_monitored};
 #define DIR_LEFT true
 #define DIR_RIGHT false
 
-#include "MarkdownLite/Toolbar.h"
+#include "Lite/Toolbar.h"
 #if 0 // Legacy toolbar is excluded from the Lite binary.
 static constexpr int IDI_SEPARATOR_ICON = -1;
 
@@ -3255,8 +3255,7 @@ bool Notepad_plus::braceMatch()
 
 void Notepad_plus::setLangStatus(LangType langType)
 {
-	const bool markdown = _pEditView && _pEditView->getCurrentBuffer() && _pEditView->getCurrentBuffer()->isMarkdownDocument();
-	_statusBar.setText(markdown ? L"Markdown" : getLangDesc(langType).c_str(), STATUSBAR_DOC_TYPE);
+	_statusBar.setText(getLangDesc(langType).c_str(), STATUSBAR_DOC_TYPE);
 }
 
 

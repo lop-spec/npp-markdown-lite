@@ -56,8 +56,8 @@
 #include "NppConstants.h"
 #include "NppDarkMode.h"
 #include "NppXml.h"
-#include "MarkdownLite/EmbeddedDefaults.h"
-#include "MarkdownLite/MenuIds.h"
+#include "Lite/EmbeddedDefaults.h"
+#include "Lite/RetiredCommands.h"
 #include "ScintillaEditView.h"
 #include "ToolBar.h"
 #include "UserDefineDialog.h"
@@ -513,19 +513,7 @@ static constexpr WinMenuKeyDefinition winKeyDefs[]
 	{ VK_NULL,    IDM_UPDATE_NPP,                               false, false, false, L"Update Notepad++" },
 	{ VK_NULL,    IDM_CONFUPDATERPROXY,                         false, false, false, L"Set Updater Proxy..." },
 	{ VK_NULL,    IDM_DEBUGINFO,                                false, false, false, nullptr },
-	{ VK_F1,      IDM_ABOUT,                                    false, false, false, nullptr },
-	{ VK_NULL, IDM_MD_NEW,   false, false, false, L"New Markdown" },
-	{ VK_NULL, IDM_MD_MODE,  false, false, false, L"Markdown mode" },
-	{ VK_NULL, IDM_MD_RICH,  false, false, false, L"Markdown typography" },
-	{ VK_NULL, IDM_MD_BOLD,  false, false, false, L"Markdown bold" },
-	{ VK_NULL, IDM_MD_ITALIC,false, false, false, L"Markdown italic" },
-	{ VK_NULL, IDM_MD_CODE,  false, false, false, L"Markdown inline code" },
-	{ VK_NULL, IDM_MD_LINK,  false, false, false, L"Markdown link" },
-	{ VK_NULL, IDM_MD_FENCE, false, false, false, L"Markdown code fence" },
-	{ VK_NULL, IDM_MD_TASK,  false, false, false, L"Markdown toggle task" },
-	{ VK_NULL, IDM_MD_TABLE, false, false, false, L"Markdown align table" },
-	{ VK_NULL, IDM_MD_PREV,  false, false, false, L"Markdown previous heading" },
-	{ VK_NULL, IDM_MD_NEXT,  false, false, false, L"Markdown next heading" }
+	{ VK_F1,      IDM_ABOUT,                                    false, false, false, nullptr }
 };
 
 
@@ -1304,7 +1292,7 @@ std::wstring NppParameters::getSettingsFolder() const
 	if (settingsFolderPath.empty())
 		return _nppPath;
 
-	pathAppend(settingsFolderPath, L"NppMarkdownLite");
+	pathAppend(settingsFolderPath, L"NppLite");
 	return settingsFolderPath;
 }
 
@@ -1357,7 +1345,7 @@ bool NppParameters::load()
 	{
 		_userPath = getSpecialFolderLocation(CSIDL_APPDATA);
 
-		pathAppend(_userPath, L"NppMarkdownLite");
+		pathAppend(_userPath, L"NppLite");
 		if (!doesDirectoryExist(_userPath.c_str()))
 			::CreateDirectory(_userPath.c_str(), NULL);
 
@@ -1437,9 +1425,9 @@ bool NppParameters::load()
 		}
 	}
 
-	if (!MarkdownLite::seedDefaults(_userPath))
+	if (!Lite::seedDefaults(_userPath))
 	{
-		::MessageBoxW(nullptr, L"Cannot create Npp Markdown Lite configuration files.", L"Npp Markdown Lite", MB_OK | MB_ICONERROR);
+		::MessageBoxW(nullptr, L"Cannot create Npp Lite configuration files.", L"Npp Lite", MB_OK | MB_ICONERROR);
 		return false;
 	}
 
@@ -3001,6 +2989,7 @@ void NppParameters::initMenuKeys()
 	int previousFuncID = 0;
 	for (const auto& wkd : winKeyDefs)
 	{
+		if (Lite::isRetiredCommand(wkd.functionId)) continue;
 		Shortcut sc((wkd.specialName ? wstring2string(wkd.specialName).c_str() : ""), wkd.isCtrl, wkd.isAlt, wkd.isShift, static_cast<unsigned char>(wkd.vKey));
 		_shortcuts.emplace_back(sc, wkd.functionId, previousFuncID == wkd.functionId);
 		previousFuncID = wkd.functionId;
