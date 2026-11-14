@@ -2014,7 +2014,7 @@ BufferID FileManager::bufferFromDocument(Document doc, bool isMainEditZone)
 	if (isMainEditZone && ndds._lang == L_USER)
 	{
 		if (!ndds._udl.empty() && nppParamInst.getULCFromName(ndds._udl.c_str()))
-			newBuf->setLangType(L_USER, ndds._udl.c_str());
+			newBuf->_userLangExt = ndds._udl; // Initial buffer is not registered yet: do not notify.
 		else
 			newBuf->_lang = L_TEXT;
 	}
