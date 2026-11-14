@@ -2156,7 +2156,9 @@ bool NppParameters::isInFontList(const std::wstring& fontName2Search) const
 
 	for (size_t i = 0, len = _fontlist.size(); i < len; i++)
 	{
-		if (_fontlist[i] == fontName2Search)
+		if (_fontlist[i] == fontName2Search ||
+			((fontName2Search == L"SimSun" || fontName2Search == L"宋体") &&
+			(_fontlist[i] == L"SimSun" || _fontlist[i] == L"宋体")))
 			return true;
 	}
 	return false;

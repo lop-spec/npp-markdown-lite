@@ -10,7 +10,7 @@ out.mkdir(parents=True, exist_ok=True)
 styles = E.parse(root/'PowerEditor/src/stylers.model.xml')
 for style in styles.iter():
     if style.tag in ['WidgetStyle','WordsStyle']:
-        style.set('fontName','宋体')
+        style.set('fontName','SimSun')
         if style.get('name') == 'Default Style': style.set('fontSize','11')
 styles.write(out/'stylers.xml',encoding='utf-8',xml_declaration=True)
 lang = E.parse(root/'PowerEditor/installer/nativeLang/chineseSimplified.xml')
@@ -38,7 +38,7 @@ for dark in (False,True):
     code = 'C7D0DD' if dark else '525A68'
     code_paper = '292F38' if dark else 'F2F4F7'
     for style in user.find('Styles'):
-        style.set('fontName','宋体')
+        style.set('fontName','SimSun')
         style.set('fontSize','11')
         style.set('fgColor',ink)
         style.set('bgColor',paper)
