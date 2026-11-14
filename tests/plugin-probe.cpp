@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <Scintilla.h>
+#include "../PowerEditor/src/menuCmdID.h"
 #include "../PowerEditor/src/MISC/PluginsManager/PluginInterface.h"
 #include "../PowerEditor/src/MISC/PluginsManager/Notepad_plus_msgs.h"
 static NppData app{};
@@ -9,7 +10,7 @@ static BOOL CALLBACK readToolbar(HWND window, LPARAM)
 {
 	wchar_t name[128]{};
 	GetClassNameW(window, name, 128);
-	if (lstrcmpW(name, TOOLBARCLASSNAMEW) == 0 && SendMessageW(window, TB_COMMANDTOINDEX, 40001, 0) >= 0)
+	if (lstrcmpW(name, TOOLBARCLASSNAMEW) == 0 && SendMessageW(window, TB_COMMANDTOINDEX, IDM_FILE_NEW, 0) >= 0)
 	{
 		int width = 0, height = 0;
 		const auto images = reinterpret_cast<HIMAGELIST>(SendMessageW(window, TB_GETIMAGELIST, 0, 0));
