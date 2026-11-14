@@ -4334,7 +4334,7 @@ intptr_t CALLBACK IndentationSubDlg::run_dlgProc(UINT message, WPARAM wParam, LP
 			::SendDlgItemMessage(_hSelf, IDC_RADIO_USINGTAB, BM_SETCHECK, !nppGUI._tabReplacedBySpace, 0);
 			::SendDlgItemMessage(_hSelf, IDC_CHECK_BACKSPACEUNINDENT, BM_SETCHECK, nppGUI._backspaceUnindent, 0);
 
-			::SendDlgItemMessage(_hSelf, IDC_LIST_TABSETTNG, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"[Default]"));
+			::SendDlgItemMessage(_hSelf, IDC_LIST_TABSETTNG, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"默认"));
 			const int nbLang = nppParam.getNbLang();
 			for (int i = 0; i < nbLang; ++i)
 			{

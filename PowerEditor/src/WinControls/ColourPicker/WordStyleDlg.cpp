@@ -1277,6 +1277,11 @@ void WordStyleDlg::setVisualFromStyleList()
 	if (!style._fontName.empty())
 	{
 		iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRING, 1, reinterpret_cast<LPARAM>(style._fontName.c_str()));
+		if (iFontName == CB_ERR && (style._fontName == L"SimSun" || style._fontName == L"宋体"))
+		{
+			const auto* alias = style._fontName == L"SimSun" ? L"宋体" : L"SimSun";
+			iFontName = ::SendMessage(_hFontNameCombo, CB_FINDSTRING, 1, reinterpret_cast<LPARAM>(alias));
+		}
 		if (iFontName == CB_ERR)
 			iFontName = 0;
 	}

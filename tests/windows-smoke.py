@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+if hasattr(sys.stdout,'reconfigure'): sys.stdout.reconfigure(encoding='utf-8',errors='replace')
 root = Path(__file__).resolve().parents[1]
 exe = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
@@ -87,6 +88,9 @@ def windows(pid, parent=None):
 work = Path(tempfile.mkdtemp(prefix='npp-lite-smoke-'))
 profile = work / 'settings'
 profile.mkdir()
+if os.environ.get('LITE_PRESEED')=='1':
+    for name in ['stylers.xml','userDefineLang.xml']:
+        shutil.copy2(root/'PowerEditor/src/Lite/generated'/name,profile/name)
 if os.environ.get('LITE_DARK') == '1':
     config=(root/'PowerEditor/src/Lite/config.xml').read_text(encoding='utf-8')
     config=config.replace('<GUIConfigs>','<GUIConfigs><GUIConfig name="DarkMode" enable="yes" tone="0" />')
@@ -148,7 +152,9 @@ try:
     command('IDM_FILE_CLOSE')
     preference_tests=runpy.run_path(str(root/'tests/preferences-smoke.py'))
     context=(u,send,pointer_message,windows,check,main,process.pid,out,root)
-    if os.environ.get('LITE_DARK')!='1': preference_tests['verify'](context)
+    if os.environ.get('LITE_DARK')!='1':
+        preference_tests['verify'](context)
+        preference_tests['verify_styles'](context,profile)
     check(not (root / 'PowerEditor/src/MarkdownLite').exists(), 'custom Markdown source directory deleted')
     labels, items = [], []
     def inspect(menu, top=False):
