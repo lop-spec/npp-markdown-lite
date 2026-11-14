@@ -31,6 +31,8 @@ u.GetMenuItemID.restype = W.UINT
 u.GetMenuStringW.argtypes = [W.HMENU, W.UINT, W.LPWSTR, C.c_int, W.UINT]
 u.GetPropW.argtypes = [W.HWND, W.LPCWSTR]
 u.GetPropW.restype = W.HANDLE
+u.GetDpiForWindow.argtypes = [W.HWND]
+u.GetDpiForWindow.restype = W.UINT
 u.GetClassNameW.argtypes = [W.HWND, W.LPWSTR, C.c_int]
 u.GetWindowThreadProcessId.argtypes = [W.HWND, C.POINTER(W.DWORD)]
 u.IsWindowVisible.argtypes = [W.HWND]
@@ -203,6 +205,21 @@ try:
     set_text('')
     send(main, 0x111, probe)
     check(text() == 'plugin-ok', 'native plugin edits original Scintilla')
+    dpi=u.GetDpiForWindow(main)
+    scale=lambda value: (value*dpi+48)//96
+    icon_width=int(u.GetPropW(main,'LiteToolbarIconWidth') or 0)
+    icon_height=int(u.GetPropW(main,'LiteToolbarIconHeight') or 0)
+    padding=send(toolbar[0],0x456)
+    button_size=send(toolbar[0],0x43A)
+    rects=[]
+    for index in range(send(toolbar[0],0x418)):
+        raw=pointer_message(toolbar[0],0x41D,capacity=16,w=index)
+        rects.append([int.from_bytes(raw[j:j+4],'little',signed=True) for j in [0,4,8,12]])
+    (out/'toolbar-metrics.json').write_text(json.dumps({'dpi':dpi,'icon':[icon_width,icon_height],'padding':[padding&65535,padding>>16],'button':[button_size&65535,button_size>>16],'rectangles':rects},indent=2),encoding='utf-8')
+    check(icon_width==icon_height==scale(21),'native toolbar image list has true 21px icons scaled for DPI')
+    check((padding&65535,padding>>16)==(scale(11),scale(9)),'toolbar has 11x9 logical padding')
+    check((button_size&65535,button_size>>16)==(scale(21)+scale(11),scale(21)+scale(9)),'toolbar button hit areas are 32x30 logical pixels')
+    check(all(rects[index][2]-rects[index][0]==scale(12) for index,item_id in enumerate(toolbar_ids) if item_id==0),'toolbar group gaps are 12 logical pixels')
     panel = next((i for name, i in items if '显示或隐藏 Markdown 面板' in name), None)
     check(panel is not None, 'official Markdown Panel menu registered')
     set_text(sample)

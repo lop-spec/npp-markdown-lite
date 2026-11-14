@@ -1,11 +1,29 @@
 #include <windows.h>
+#include <commctrl.h>
 #include <Scintilla.h>
 #include "../PowerEditor/src/MISC/PluginsManager/PluginInterface.h"
 #include "../PowerEditor/src/MISC/PluginsManager/Notepad_plus_msgs.h"
 static NppData app{};
 static FuncItem commands[1]{};
+static BOOL CALLBACK readToolbar(HWND window, LPARAM)
+{
+	wchar_t name[128]{};
+	GetClassNameW(window, name, 128);
+	if (lstrcmpW(name, TOOLBARCLASSNAMEW) == 0 && SendMessageW(window, TB_COMMANDTOINDEX, 40001, 0) >= 0)
+	{
+		int width = 0, height = 0;
+		const auto images = reinterpret_cast<HIMAGELIST>(SendMessageW(window, TB_GETIMAGELIST, 0, 0));
+		if (images && ImageList_GetIconSize(images, &width, &height))
+		{
+			SetPropW(app._nppHandle, L"LiteToolbarIconWidth", reinterpret_cast<HANDLE>(static_cast<INT_PTR>(width)));
+			SetPropW(app._nppHandle, L"LiteToolbarIconHeight", reinterpret_cast<HANDLE>(static_cast<INT_PTR>(height)));
+		}
+	}
+	return TRUE;
+}
 static void probeCommand()
 {
+	EnumChildWindows(app._nppHandle, readToolbar, 0);
 	const char text[] = "plugin-ok";
 	SendMessageW(app._scintillaMainHandle, SCI_ADDTEXT, sizeof(text) - 1, reinterpret_cast<LPARAM>(text));
 }

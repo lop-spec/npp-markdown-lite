@@ -46,6 +46,13 @@ static constexpr DWORD WS_TOOLBARSTYLE = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
 
 static constexpr int REBAR_BAR_EXTERNAL = 10;
 
+// Logical pixels at 96 DPI. Keep native tooltips, states and plugin buttons.
+static constexpr int liteSmallIcon = 21;
+static constexpr int liteLargeIcon = 42;
+static constexpr int litePaddingX = 11;
+static constexpr int litePaddingY = 9;
+static constexpr int liteGroupGap = 12;
+
 struct ToolbarIconIdUnit
 {
 	constexpr ToolbarIconIdUnit(const std::wstring_view& id, bool hasDisabledIcon) noexcept
@@ -264,7 +271,7 @@ bool ToolBar::init(HINSTANCE hInst, HWND hPere, toolBarStatusType type, const To
 
 	_dpiManager.setDpi(hPere);
 
-	int iconSize = _dpiManager.scale(_state == TB_LARGE || _state == TB_LARGE2 ? 32 : 16);
+	int iconSize = _dpiManager.scale(_state == TB_LARGE || _state == TB_LARGE2 ? liteLargeIcon : liteSmallIcon);
 
 	_toolBarIcons.init(buttonUnitArray, arraySize, _vDynBtnReg);
 	_toolBarIcons.create(_hInst, iconSize);
@@ -399,7 +406,7 @@ int ToolBar::getHeight() const
 
 void ToolBar::reduce() 
 {
-	int iconDpiDynamicalSize = _dpiManager.scale(16);
+	int iconDpiDynamicalSize = _dpiManager.scale(liteSmallIcon);
 	_toolBarIcons.resizeIcon(iconDpiDynamicalSize);
 	setState(TB_SMALL);
 	reset(true);	//recreate toolbar if previous state was Std icons or Big icons
@@ -408,7 +415,7 @@ void ToolBar::reduce()
 
 void ToolBar::enlarge()
 {
-	int iconDpiDynamicalSize = _dpiManager.scale(32);
+	int iconDpiDynamicalSize = _dpiManager.scale(liteLargeIcon);
 	_toolBarIcons.resizeIcon(iconDpiDynamicalSize);
 	setState(TB_LARGE);
 	reset(true);	//recreate toolbar if previous state was Std icons or Small icons
@@ -417,7 +424,7 @@ void ToolBar::enlarge()
 
 void ToolBar::reduceToSet2()
 {
-	int iconDpiDynamicalSize = _dpiManager.scale(16);
+	int iconDpiDynamicalSize = _dpiManager.scale(liteSmallIcon);
 	_toolBarIcons.resizeIcon(iconDpiDynamicalSize);
 
 	setState(TB_SMALL2);
@@ -427,7 +434,7 @@ void ToolBar::reduceToSet2()
 
 void ToolBar::enlargeToSet2()
 {
-	int iconDpiDynamicalSize = _dpiManager.scale(32);
+	int iconDpiDynamicalSize = _dpiManager.scale(liteLargeIcon);
 	_toolBarIcons.resizeIcon(iconDpiDynamicalSize);
 	setState(TB_LARGE2);
 	reset(true);	//recreate toolbar if previous state was Std icons or Small icons
@@ -531,7 +538,7 @@ void ToolBar::reset(bool create)
 	else
 	{
 		//Else set the internal imagelist with standard bitmaps
-		int iconDpiDynamicalSize = _dpiManager.scale(16);
+		int iconDpiDynamicalSize = _dpiManager.scale(liteSmallIcon);
 		::SendMessage(_hSelf, TB_SETBITMAPSIZE, 0, MAKELPARAM(iconDpiDynamicalSize, iconDpiDynamicalSize));
 
 		TBADDBITMAP addbmp = { 0, 0 };
@@ -566,11 +573,16 @@ void ToolBar::reset(bool create)
 		}
 	}
 
+	const int iconSize = _dpiManager.scale((_state == TB_LARGE || _state == TB_LARGE2) ? liteLargeIcon : liteSmallIcon);
+	const int paddingX = _dpiManager.scale(litePaddingX);
+	const int paddingY = _dpiManager.scale(litePaddingY);
+	::SendMessage(_hSelf, TB_SETPADDING, 0, MAKELPARAM(paddingX, paddingY));
+	::SendMessage(_hSelf, TB_SETBUTTONSIZE, 0, MAKELPARAM(iconSize + paddingX, iconSize + paddingY));
 	if (create)
-	{	//if the toolbar has been recreated, readd the buttons
+	{	// Reapply logical group spacing after DPI and plugin rebuilds.
 		_nbCurrentButtons = _nbTotalButtons;
-		WORD btnSize = static_cast<WORD>(_dpiManager.scale((_state == TB_LARGE || _state == TB_LARGE2) ? 32 : 16));
-		::SendMessage(_hSelf, TB_SETBUTTONSIZE , 0, MAKELONG(btnSize, btnSize));
+		for (size_t i = 0; i < _nbTotalButtons; ++i)
+			if ((_pTBB[i].fsStyle & BTNS_SEP) != 0) _pTBB[i].iBitmap = _dpiManager.scale(liteGroupGap);
 		::SendMessage(_hSelf, TB_ADDBUTTONS, _nbTotalButtons, reinterpret_cast<LPARAM>(_pTBB.get()));
 	}
 	::SendMessage(_hSelf, TB_AUTOSIZE, 0, 0);
@@ -693,7 +705,7 @@ void ToolBar::doPopup(POINT chevPoint)
 void ToolBar::resizeIconsDpi(UINT dpi)
 {
 	_dpiManager.setDpi(dpi);
-	const int iconDpiDynamicalSize = _dpiManager.scale((_state == TB_LARGE || _state == TB_LARGE2) ? 32 : 16);
+	const int iconDpiDynamicalSize = _dpiManager.scale((_state == TB_LARGE || _state == TB_LARGE2) ? liteLargeIcon : liteSmallIcon);
 	_toolBarIcons.resizeIcon(iconDpiDynamicalSize);
 	reset(true);
 }

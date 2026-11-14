@@ -9,5 +9,5 @@ if not exist test-output mkdir test-output
 "%SystemRoot%\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:library /out:tests\native-acceptance.dll tests\native-acceptance.cs
 if errorlevel 1 exit /b 4
 if not exist PowerEditor\bin64\plugins\LiteProbe mkdir PowerEditor\bin64\plugins\LiteProbe
-cl /nologo /LD /MT /EHsc /std:c++20 /utf-8 /Iscintilla\include tests\plugin-probe.cpp /Fo:test-output\plugin-probe.obj /Fe:PowerEditor\bin64\plugins\LiteProbe\LiteProbe.dll /link user32.lib
+cl /nologo /LD /MT /EHsc /std:c++20 /utf-8 /Iscintilla\include tests\plugin-probe.cpp /Fo:test-output\plugin-probe.obj /Fe:PowerEditor\bin64\plugins\LiteProbe\LiteProbe.dll /link user32.lib comctl32.lib
 exit /b %errorlevel%
