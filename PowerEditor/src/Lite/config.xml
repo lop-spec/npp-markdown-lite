@@ -3,6 +3,7 @@
     <GUIConfigs>
         <GUIConfig name="ToolBar" visible="yes">small</GUIConfig>
         <GUIConfig name="StatusBar">show</GUIConfig>
+        <GUIConfig name="DockingManager" leftWidth="200" rightWidth="440" topHeight="200" bottomHeight="200" />
         <GUIConfig name="RememberLastSession">yes</GUIConfig>
         <GUIConfig name="noUpdate">yes</GUIConfig>
         <GUIConfig name="NewDocDefaultSettings" format="0" encoding="4" lang="0" codepage="-1" openAnsiAsUTF8="yes" />

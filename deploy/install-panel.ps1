@@ -13,7 +13,7 @@ try {
     $target = Join-Path $EditorDirectory ('plugins/' + $lock.folder)
     if (Test-Path $target) { throw "Plugin already exists; back it up before replacement: $target" }
     New-Item -ItemType Directory -Force $target | Out-Null
-    & tar.exe -xf $Archive -C $target
+    & (Join-Path $env:SystemRoot 'System32/tar.exe') -xf $Archive -C $target
     if ($LASTEXITCODE -ne 0) { throw 'Markdown Panel extraction failed' }
     foreach ($file in @('NppMarkdownPanel.dll','lib/Markdig.dll','lib/Webview2Viewer.dll','lib/runtimes/win-x64/native/WebView2Loader.dll','style.css','style-dark.css','License.txt')) {
         if (-not (Test-Path (Join-Path $target $file))) { throw "Incomplete official plugin: $file" }
