@@ -155,7 +155,15 @@ try:
     for old_md in range(49800, 49812): send(main, 0x111, old_md)
     check(text() == snapshot, 'all 12 removed Markdown command IDs remain inert')
     toolbar = [hwnd for hwnd, name in windows(process.pid, main) if name == 'ToolbarWindow32']
-    check(bool(toolbar) and send(toolbar[0], 0x418) == 10, '8 host toolbar buttons plus 2 separators')
+    check(bool(toolbar), 'native toolbar retained')
+    toolbar_ids = []
+    for index in range(send(toolbar[0], 0x418)):
+        data = pointer_message(toolbar[0], 0x417, capacity=32, w=index)
+        toolbar_ids.append(int.from_bytes(data[4:8], 'little', signed=True))
+    host_toolbar = [i for i in toolbar_ids if 40000 <= i < 50000]
+    expected_toolbar = [constants[name] for name in ['IDM_FILE_NEW','IDM_FILE_OPEN','IDM_FILE_SAVE','IDM_EDIT_UNDO','IDM_EDIT_REDO','IDM_SEARCH_FIND','IDM_SEARCH_REPLACE','IDM_VIEW_WRAP']]
+    check(host_toolbar == expected_toolbar, 'exactly 8 host toolbar buttons; plugin additions allowed')
+    check(all(constants[name] not in toolbar_ids for name in ['IDM_FILE_SAVEALL','IDM_EDIT_CUT','IDM_EDIT_COPY','IDM_EDIT_PASTE']), '4 redundant toolbar buttons removed, commands retained')
     send(sci, 'SCI_SETSEL', 0, 4)
     pointer_message(sci, 'SCI_REPLACESEL', b'test\0')
     check(text().startswith('test'), 'native selection replacement')
