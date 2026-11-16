@@ -4,12 +4,12 @@ Notepad++ 原生精简二开。保持原生编辑框、标签栏、查找替换�
 
 [下载便携包（已装插件）](https://github.com/lop-spec/npp-markdown-lite/releases/latest) · [裁剪清单](docs/removed-commands.md) · [构建验证](https://github.com/lop-spec/npp-markdown-lite/actions)
 
-## 1.2.0
+## 1.2.1
 
 - 工具栏图标16→21像素（约1.3倍），横纵留白11/9像素，按钮32×30、组间隔12像素；按DPI等比缩放，插件按钮和禁用状态保持原生。
 - 首选项从24页精简到14页，移除10个低频页面及98个可操作控件（含互斥选项；不把标签、标题或提示计入），清单随便携包提供。保留备份、性能保护、基本编辑和补全设置。
 - 内置官方简体中文包；补齐动态下拉值、样式显示名和Markdown Panel设置标签。编码、编程语言、字体及引擎名称保留通用名称，内部英文键不改。
-- 新建文档默认Markdown，默认字体微软雅黑。标题、正文和代码统一11磅、原生行高；语法标记可见，列编辑、搜索、多选区、撤销与插件接口保留。
+- 新建文档默认Markdown，默认字体宋体。标题、正文和代码统一11磅、原生行高；语法标记可见，列编辑、搜索、多选区、撤销与插件接口保留。
 - 采用官方UDL索引推荐的 Edditoria/markdown-plus-plus 配置，适配深浅配色，不重建解析器或富文本编辑层。保留其MIT许可。不是所有复杂Markdown语法的完整渲染，表格预览仍由插件负责。
 
 ## 保留的1.1.0精简
@@ -31,7 +31,7 @@ Notepad++ 原生精简二开。保持原生编辑框、标签栏、查找替换�
 
 ## 设置隔离
 
-便携包含 `doLocalConf.xml`，设置保存在当前解压目录；不含该标记的裸 EXE 使用 `%APPDATA%/NppLite`。首次启动从EXE内嵌资源写入缺失的默认XML，不覆盖已有设置；升级时需备份后合并新默认语言、微软雅黑及中文资源，不覆盖其他个人偏好。不覆盖官方 Notepad++ 或旧 NppMarkdownLite 的配置。独立窗口类 `NppLite`，可并行运行。
+便携包含 `doLocalConf.xml`，设置保存在当前解压目录；不含该标记的裸 EXE 使用 `%APPDATA%/NppLite`。首次启动从EXE内嵌资源写入缺失的默认XML，不覆盖已有设置；升级时需备份后合并新默认语言、宋体及中文资源，不覆盖其他个人偏好。不覆盖官方 Notepad++ 或旧 NppMarkdownLite 的配置。独立窗口类 `NppLite`，可并行运行。
 
 ## 构建与验证
 
@@ -47,7 +47,7 @@ powershell -File deploy\install-panel.ps1 -EditorDirectory PowerEditor\bin64
 python tests\windows-smoke.py PowerEditor\bin64\npp-lite.exe test-output
 ```
 
-真实GUI测试只在CI或私有隐藏桌面运行，避免干扰日常窗口；包含14页设置控件、中文标签、默认Markdown、实际微软雅黑与等高行距读回。发行附构建提交、体积、SHA256、裁剪清单和测试证据。
+真实GUI测试只在CI或私有隐藏桌面运行，避免干扰日常窗口；包含14页设置控件、中文标签、默认Markdown、实际宋体与等高行距读回。发行附构建提交、体积、SHA256、裁剪清单和测试证据。
 
 ## 许可证
 

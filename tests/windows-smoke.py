@@ -147,7 +147,7 @@ try:
     check(all(send(sci,'SCI_STYLEGETSIZE',style)==11 for style in used_styles),'all Markdown styles use equal 11pt size')
     used_fonts={style:pointer_message(sci,'SCI_STYLEGETFONT',capacity=128,w=style).split(b'\0')[0].decode('utf-8') for style in used_styles}
     (out/'font-styles.json').write_text(json.dumps(used_fonts,ensure_ascii=False,indent=2),encoding='utf-8')
-    check(all(font in ['微软雅黑','Microsoft YaHei'] for font in used_fonts.values()),'all Markdown styles actually use requested Microsoft YaHei font')
+    check(all(font in ['宋体','SimSun'] for font in used_fonts.values()),'all Markdown styles actually use requested SimSun font')
     check(send(sci,'SCI_TEXTHEIGHT',0)==send(sci,'SCI_TEXTHEIGHT',2),'heading and body retain equal native line height')
     command('IDM_FILE_NEW')
     check(send(sci,'SCI_GETLEXER')==152 and send(sci,'SCI_GETTEXTLENGTH')==0,'new documents default to native Markdown')

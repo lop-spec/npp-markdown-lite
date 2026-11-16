@@ -82,7 +82,7 @@ def verify_styles(context,profile):
     check(labels and all(re.search('[\u4e00-\u9fff]',name) for name in labels),'all global style labels Chinese')
     font=C.create_unicode_buffer(256)
     send(u.GetDlgItem(dialog,2202),0xD,len(font),C.addressof(font))
-    check(font.value in ['Microsoft YaHei','微软雅黑'],'style font selector correctly shows Microsoft YaHei alias')
+    check(font.value in ['SimSun','宋体'],'style font selector correctly shows SimSun alias')
     # Exercise the native edit/save path, restoring the user's temporary value.
     send(u.GetDlgItem(dialog,2204),0xF5)
     send(u.GetDlgItem(dialog,2204),0xF5)
