@@ -7,11 +7,19 @@ import xml.etree.ElementTree as E
 root = Path(__file__).resolve().parents[1]
 out = root/'PowerEditor/src/Lite/generated'
 out.mkdir(parents=True, exist_ok=True)
+paper_light = 'E6F2E2'
+line_light = 'D9EBD4'
 styles = E.parse(root/'PowerEditor/src/stylers.model.xml')
 for style in styles.iter():
     if style.tag in ['WidgetStyle','WordsStyle']:
         style.set('fontName','SimSun')
-        if style.get('name') == 'Default Style': style.set('fontSize','11')
+        if style.get('name') == 'Default Style':
+            style.set('fontSize','11')
+            style.set('bgColor',paper_light)
+        elif style.tag == 'WidgetStyle' and style.get('name') in {'Line number margin','Fold margin'}:
+            style.set('bgColor',line_light)
+        elif style.get('name') == 'Current line background colour' and style.tag == 'WidgetStyle':
+            style.set('bgColor',line_light)
 styles.write(out/'stylers.xml',encoding='utf-8',xml_declaration=True)
 lang = E.parse(root/'PowerEditor/installer/nativeLang/chineseSimplified.xml')
 native = lang.getroot().find('Native-Langue')
@@ -29,9 +37,9 @@ source = E.parse(root/'deploy/markdown/upstream.udl.xml').getroot().find('UserLa
 for dark in (False,True):
     user = copy.deepcopy(source)
     user.set('name','Markdown（深色）' if dark else 'Markdown')
-    user.set('ext','md markdown mdown mkd mdwn')
+    user.set('ext','md markdown mdown mkd mdwn txt')
     if dark: user.set('darkModeTheme','yes')
-    paper = '20242B' if dark else 'FFFFFF'
+    paper = '20242B' if dark else paper_light
     ink = 'D5DAE2' if dark else '29313D'
     accent = '8CB9EC' if dark else '285D96'
     muted = '9AA9BC' if dark else '68768A'
@@ -73,7 +81,7 @@ for name in style_names:
 style_lines += ['    return nullptr;', '}', '}']
 (out/'StyleLabels.h').write_text('\n'.join(style_lines)+'\n',encoding='utf-8')
 # Count only interactive settings, not labels, tooltips or page titles.
-retired = {'TOOLBAR','EDITING2','LANGUAGE','HIGHLIGHTING','PRINT','MULTIINSTANCE','DELIMITER','CLOUD_LINK','SEARCHENGINE'}
+retired = {'TOOLBAR','EDITING2','LANGUAGE','PRINT','MULTIINSTANCE','DELIMITER','CLOUD_LINK','SEARCHENGINE'}
 resource = (root/'PowerEditor/src/WinControls/Preference/preference.rc').read_text(encoding='utf-8-sig')
 items = []
 for match in re.finditer(r'IDD_PREFERENCE_SUB_(\w+) DIALOGEX.*?\nBEGIN\n(.*?)\nEND',resource,re.S):
@@ -83,6 +91,6 @@ for match in re.finditer(r'IDD_PREFERENCE_SUB_(\w+) DIALOGEX.*?\nBEGIN\n(.*?)\nE
             idmatch = re.search(r'\b(ID[CD]_\w+|IDD_\w+)\b',line)
             if idmatch: items.append({'page':match[1],'control':idmatch[1]})
 assert len(items) >= 50
-manifest = {'retiredPages':10,'retiredInteractiveControls':len(items),'retiredControls':items,'retainedPages':14,'language':'简体中文','defaultFont':'宋体','markdown':'native UDL, uniform 11pt, no extra line spacing'}
+manifest = {'retiredPages':9,'retiredInteractiveControls':len(items),'retiredControls':items,'retainedPages':15,'language':'简体中文','defaultFont':'宋体','lightPaper':paper_light,'markdown':'Edditoria v3.4.0 native UDL, also applies to ordinary text, uniform 11pt'}
 (out/'settings-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
-print(f'Prepared official zh-CN + native Markdown UDL; removed {len(items)} interactive preference controls, 14 pages remain')
+print(f'Prepared official zh-CN + native Markdown UDL; removed {len(items)} interactive preference controls, 15 pages remain')

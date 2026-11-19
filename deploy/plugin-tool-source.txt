@@ -1,0 +1,6 @@
+Npp Lite plugin helper uses WinGUp v5.4.3 (Don Ho and contributors), LGPL-3.0-or-later.
+Corresponding upstream sources and license: https://github.com/notepad-plus-plus/wingup/tree/v5.4.3
+Npp Lite source, adaptation and build recipes: https://github.com/lop-spec/npp-markdown-lite/tree/v1.3.0/deploy
+The official x64 catalog is distributed unmodified from Notepad++ v8.9.9.1:
+https://github.com/notepad-plus-plus/notepad-plus-plus/releases/tag/v8.9.9.1
+Catalog sources and license: https://github.com/notepad-plus-plus/nppPluginList

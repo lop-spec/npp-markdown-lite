@@ -4,6 +4,12 @@ Notepad++ 原生精简二开。保持原生编辑框、标签栏、查找替换�
 
 [下载便携包（已装插件）](https://github.com/lop-spec/npp-markdown-lite/releases/latest) · [裁剪清单](docs/removed-commands.md) · [构建验证](https://github.com/lop-spec/npp-markdown-lite/actions)
 
+## 1.3.0
+
+- 浅色编辑区默认淡绿（`#E6F2E2`），深色模式不变；新建、`.md`、`.txt` 和未被识别为其他语言的普通文本统一使用 [Edditoria Markdown-plus-plus 3.4.0](https://github.com/Edditoria/markdown-plus-plus/releases/tag/v3.4.0) 原生高亮。不会更名或改写源文件；已识别的编程语言保留自己的语法，超大文件仍受性能保护。
+- `Ctrl+F` 默认显示匹配高亮；`Ctrl+M` 打开「标记」页，可手动「全部标记」。首选项恢复原生「高亮」页，可调整选词智能高亮。
+- 便携包恢复 Notepad++ 原生「插件 → 插件管理」与官方目录，使用基于 [WinGUp](https://github.com/notepad-plus-plus/wingup/tree/v5.4.3) 构建的独立助手，只在普通权限下管理本便携目录的插件，不更新编辑器。插件操作前会按原生流程提示重启。裸 EXE 不含插件目录及助手。
+
 ## 1.2.1
 
 - 工具栏图标16→21像素（约1.3倍），横纵留白11/9像素，按钮32×30、组间隔12像素；按DPI等比缩放，插件按钮和禁用状态保持原生。
@@ -41,6 +47,7 @@ Notepad++ 原生精简二开。保持原生编辑框、标签栏、查找替换�
 
 ```bat
 python deploy\prepare-ui-assets.py
+python deploy\build-plugin-tool.py
 msbuild PowerEditor\visual.net\notepadPlus.sln /m /p:Configuration=Release /p:Platform=x64
 tests\build-probes.cmd
 powershell -File deploy\install-panel.ps1 -EditorDirectory PowerEditor\bin64

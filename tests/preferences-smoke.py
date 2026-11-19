@@ -30,8 +30,9 @@ def verify(context):
     check(bool(preferences),'native preferences dialog opens')
     listing=u.GetDlgItem(preferences,6002)
     count=send(listing,0x18B)
-    check(count==14,'exactly 14 retained preference pages')
+    check(count==15,'exactly 15 retained preference pages')
     page_names=[listed(listing,i) for i in range(count)]
+    check('高亮' in page_names,'native Highlighting preferences restored')
     (out/'preference-titles.json').write_text(json.dumps(page_names,ensure_ascii=False,indent=2),encoding='utf-8')
     check(all(re.search('[\u4e00-\u9fff]',name) for name in page_names),'all preference page titles Chinese')
     manifest=json.loads((root/'PowerEditor/src/Lite/generated/settings-manifest.json').read_text(encoding='utf-8'))
@@ -111,3 +112,50 @@ def verify_plugin(context,command_id):
     check('浅色样式文件：' in labels and '缩放比例：' in labels and '保存' in labels and '取消' in labels,'official plugin settings labels translated without replacing DLL')
     u.PostMessageW(dialog,0x10,0,0)
     time.sleep(.2)
+
+
+def verify_find_and_admin(context, sci, items, set_text):
+    u, send, pointer, windows, check, main, pid, out, root = context
+    def visible_with(child_id):
+        deadline = time.monotonic() + 8
+        while time.monotonic() < deadline:
+            hwnd = next((h for h, name in windows(pid) if u.IsWindowVisible(h) and u.GetDlgItem(h, child_id)), None)
+            if hwnd:
+                return hwnd
+            time.sleep(.1)
+        check(False, f'native dialog with control {child_id} opens')
+    def indicator(number, position):
+        return send(sci, 'SCI_INDICATORVALUEAT', number, position) != 0
+    set_text('needle line\nother needle here\nfinal needle\n')
+    send(sci, 'SCI_SETSEL', 0, 6)
+    deadline = time.monotonic() + 3
+    while not indicator(29, 18) and time.monotonic() < deadline:
+        time.sleep(.05)
+    check(indicator(29, 18) and indicator(29, 37), 'native Smart Highlight marks matching text')
+    send(main, 0x111, 43001)  # Find with current selection prefilled
+    find = visible_with(1601)
+    combo = u.GetDlgItem(find, 1601)
+    check(send(u.GetDlgItem(find, 1628), 0xF0) == 1, 'Find match-highlighting checkbox enabled by default')
+    u.SendMessageW.argtypes = [W.HWND, W.UINT, C.c_size_t, W.LPCWSTR]
+    u.SendMessageW.restype = C.c_ssize_t
+    u.SendMessageW(combo, 0xC, 0, 'needle')
+    send(find, 0x111, (6 << 16) | 1601, combo)  # CBN_EDITUPDATE
+    deadline = time.monotonic() + 3
+    while not indicator(30, 18) and time.monotonic() < deadline:
+        time.sleep(.05)
+    check(indicator(30, 18) and indicator(30, 37), 'native live Find paints multiple matches')
+    send(find, 0x111, 2)
+    check(any(i == 43054 for _, i in items), 'Mark restored to Search menu')
+    send(main, 0x111, 43054)
+    find = visible_with(1615)
+    send(find, 0x111, 1615, u.GetDlgItem(find, 1615))
+    check(indicator(31, 18) and indicator(31, 37), 'native Mark All paints multiple matches')
+    send(find, 0x111, 2)
+    check(any(i == 48015 and '插件管理' in name for name, i in items), 'native Chinese Plugins Admin menu is present')
+    send(main, 0x111, 48015)
+    admin = visible_with(5506)
+    available = u.GetDlgItem(admin, 5506)
+    count = send(available, 0x1004)  # LVM_GETITEMCOUNT
+    check(count > 30, 'native Plugins Admin lists compatible catalog items')
+    (out/'plugins-admin.json').write_text(json.dumps({'availableCount':count}),encoding='utf-8')
+    send(admin, 0x111, 1)

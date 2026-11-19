@@ -72,6 +72,30 @@ bool SecurityGuard::checkModule([[maybe_unused]] const std::wstring& filePath, [
 #endif
 }
 
+#if __has_include("../../Lite/generated/PluginToolHash.h")
+#include "../../Lite/generated/PluginToolHash.h"
+#endif
+
+bool SecurityGuard::checkLitePluginTool([[maybe_unused]] const std::wstring& filePath)
+{
+#ifdef LITE_PLUGIN_TOOL_SHA256
+	bool failed = false;
+	const auto content = getFileContent(filePath.c_str(), &failed);
+	if (failed || content.empty())
+		return false;
+	uint8_t hash[32]{};
+	calc_sha_256(hash, reinterpret_cast<const uint8_t*>(content.data()), content.size());
+	constexpr auto expected = LITE_PLUGIN_TOOL_SHA256;
+	constexpr wchar_t digits[] = L"0123456789abcdef";
+	for (size_t i = 0; i < sizeof(hash); ++i)
+		if (expected[i * 2] != digits[hash[i] >> 4] || expected[i * 2 + 1] != digits[hash[i] & 15])
+			return false;
+	return true;
+#else
+	return false;
+#endif
+}
+
 bool SecurityGuard::checkSha256(const std::wstring& filePath, NppModule module2check) const
 {
 	// Uncomment the following code if the components are rebuilt for testing

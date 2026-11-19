@@ -149,6 +149,19 @@ try:
     (out/'font-styles.json').write_text(json.dumps(used_fonts,ensure_ascii=False,indent=2),encoding='utf-8')
     check(all(font in ['宋体','SimSun'] for font in used_fonts.values()),'all Markdown styles actually use requested SimSun font')
     check(send(sci,'SCI_TEXTHEIGHT',0)==send(sci,'SCI_TEXTHEIGHT',2),'heading and body retain equal native line height')
+    paper = '20242B' if os.environ.get('LITE_DARK') == '1' else 'E6F2E2'
+    check(send(sci, 'SCI_STYLEGETBACK', 0) == int.from_bytes(bytes.fromhex(paper), 'little'), 'native Markdown paper color read from Scintilla')
+    original_styles = [send(sci, 'SCI_GETSTYLEAT', i) for i in range(len(sample))]
+    npp_open = 1024 + 1000 + 77  # NPPM_DOOPEN
+    for filename in ('sample.txt', 'README'):
+        plain = work / filename
+        plain.write_bytes(fixture.read_bytes())
+        pointer_message(main, npp_open, (str(plain)+'\0').encode('utf-16-le'))
+        check(text() == sample and send(sci, 'SCI_GETLEXER') == 152, f'{filename} opens as unchanged Markdown source')
+        send(sci, 'SCI_COLOURISE', 0, -1)
+        check([send(sci, 'SCI_GETSTYLEAT', i) for i in range(len(sample))] == original_styles, f'{filename} has identical native Markdown styles')
+        check(hashlib.sha256(plain.read_bytes()).hexdigest() == before, f'{filename} original bytes unchanged')
+        command('IDM_FILE_CLOSE')
     command('IDM_FILE_NEW')
     check(send(sci,'SCI_GETLEXER')==152 and send(sci,'SCI_GETTEXTLENGTH')==0,'new documents default to native Markdown')
     command('IDM_FILE_CLOSE')
@@ -169,6 +182,8 @@ try:
             else: items.append((name.value, u.GetMenuItemID(menu, i)))
     inspect(u.GetMenu(main), True)
     check(len(labels) == 13 and not any('Markdown' in label for label in labels), 'no built-in Markdown top menu')
+    if os.environ.get('LITE_DARK') != '1':
+        preferences_tests['verify_find_and_admin'](context, sci, items, set_text)
     ids = {item_id for _, item_id in items}
     retired = re.findall(r'^\s*(IDM_\w+)', (root / 'PowerEditor/src/Lite/RetiredCommands.h').read_text(encoding='utf-8'), re.M)
     check(len(retired) == 80 and len(set(retired)) == 80, '80 additional native commands uniquely enumerated')

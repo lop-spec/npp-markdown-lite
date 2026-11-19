@@ -57,6 +57,7 @@ public:
 	SecurityGuard();
 
 	bool checkModule(const std::wstring& filePath, NppModule module2check);
+	static bool checkLitePluginTool(const std::wstring& filePath);
 
 	std::wstring signer_display_name() const { return _signer_display_name; }
 	std::wstring signer_subject() const { return _signer_subject; }

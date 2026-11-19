@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <NotepadPlus>
+    <FindHistory findDlgHighlightMatches="yes" />
     <GUIConfigs>
+        <GUIConfig name="SmartHighLight" matchCase="no" wholeWordOnly="yes" onAnotherView="no">yes</GUIConfig>
         <GUIConfig name="ToolBar" visible="yes">small</GUIConfig>
         <GUIConfig name="StatusBar">show</GUIConfig>
         <GUIConfig name="DockingManager" leftWidth="200" rightWidth="440" topHeight="200" bottomHeight="200" />

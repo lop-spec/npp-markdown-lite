@@ -277,6 +277,9 @@ intptr_t CALLBACK PreferenceDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 
 
 
+			_highlightingSubDlg.init(_hInst, _hSelf);
+			_highlightingSubDlg.create(IDD_PREFERENCE_SUB_HIGHLIGHTING, false, false);
+
 			_searchingSubDlg.init(_hInst, _hSelf);
 			_searchingSubDlg.create(IDD_PREFERENCE_SUB_SEARCHING, false, false);
 

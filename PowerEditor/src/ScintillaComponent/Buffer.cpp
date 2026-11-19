@@ -322,7 +322,7 @@ void Buffer::setFileName(const wchar_t *fn)
 		ext += 1;
 
 		// Define User Lang firstly
-		const wchar_t* langName = nppParamInst.getUserDefinedLangNameFromExt(ext, _fileName);
+		const wchar_t* langName = _wcsicmp(_fileName, L"CMakeLists.txt") == 0 ? nullptr : nppParamInst.getUserDefinedLangNameFromExt(ext, _fileName);
 		if (langName)
 		{
 			determinedLang = L_USER;
@@ -1069,9 +1069,14 @@ BufferID FileManager::loadFile(const wchar_t* filename, Document doc, int encodi
 		else
 			newBuf->setEncoding(-1);
 
-		// if not a large file, no file extension, and the language has been detected,  we use the detected value
-		if (!newBuf->_isLargeFile && ((newBuf->getLangType() == L_TEXT) && (loadedFileFormat._language != L_TEXT)))
-			newBuf->setLangType(loadedFileFormat._language);
+		// Honor content detection before falling back to Markdown for ordinary text.
+		if (!newBuf->_isLargeFile && newBuf->getLangType() == L_TEXT)
+		{
+			if (loadedFileFormat._language != L_TEXT)
+				newBuf->setLangType(loadedFileFormat._language);
+			else if (NppParameters::getInstance().getULCFromName(L"Markdown"))
+				newBuf->setLangType(L_USER, L"Markdown");
+		}
 
 		setLoadedBufferEncodingAndEol(newBuf, UnicodeConvertor, loadedFileFormat._encoding, loadedFileFormat._eolFormat);
 

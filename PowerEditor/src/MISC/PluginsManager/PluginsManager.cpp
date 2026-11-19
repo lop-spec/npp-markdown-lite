@@ -342,11 +342,8 @@ bool PluginsManager::loadPlugins(const wchar_t* dir, const PluginViewList* plugi
 	HANDLE hFindFolder = ::FindFirstFile(pluginsFolderFilter.c_str(), &foundData);
 	HANDLE hFindDll = INVALID_HANDLE_VALUE;
 
-	// Get Notepad++ current version
-	wchar_t nppFullPathName[MAX_PATH];
-	GetModuleFileName(NULL, nppFullPathName, MAX_PATH);
-	Version nppVer;
-	nppVer.setVersionFrom(nppFullPathName);
+	// Catalog ranges refer to the upstream ABI, not the Npp Lite product version.
+	const Version nppVer(NPP_COMPAT_VERSION);
 
 	// get plugin folder
 	if (hFindFolder != INVALID_HANDLE_VALUE && (foundData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))

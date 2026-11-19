@@ -50,9 +50,7 @@
 #include "pluginsAdminRes.h"
 #include "resource.h"
 
-#ifdef NDEBUG
 #include "verifySignedfile.h"
-#endif
 
 #define TEXTFILE        256
 #define IDR_PLUGINLISTJSONFILE  101
@@ -267,7 +265,7 @@ PluginsAdminDlg::PluginsAdminDlg()
 	_updaterDir = nppParameters.getNppPath();
 	pathAppend(_updaterDir, L"updater");
 	_updaterFullPath = _updaterDir;
-	pathAppend(_updaterFullPath, L"gup.exe");
+	pathAppend(_updaterFullPath, L"plugin-tool.exe");
 
 	// get plugin-list path
 	_pluginListFullPath = nppParameters.getPluginConfDir();
@@ -300,10 +298,10 @@ bool PluginsAdminDlg::exitToInstallRemovePlugins(Operation op, const vector<Plug
 		return false;
 
 	NppParameters& nppParameters = NppParameters::getInstance();
-	wstring updaterDir = nppParameters.getNppPath();
-	updaterDir += L"\\updater\\";
-
-	wstring updaterFullPath = updaterDir + L"gup.exe";
+	const auto& updaterDir = _updaterDir;
+	const auto& updaterFullPath = _updaterFullPath;
+	if (!SecurityGuard::checkLitePluginTool(updaterFullPath))
+		return false;
 
 	wstring updaterParams = opStr;
 
@@ -392,7 +390,7 @@ bool PluginsAdminDlg::exitToDeactivateActivatePlugins(Operation op, const vector
 	if (op != pa_deactivate && op != pa_activate)
 		return false;
 
-	if (puis.empty())
+	if (puis.empty() || !SecurityGuard::checkLitePluginTool(_updaterFullPath))
 		return false;
 
 	NppParameters& nppParameters = NppParameters::getInstance();
@@ -798,7 +796,7 @@ bool PluginsAdminDlg::initFromJson()
 		return false;
 	}
 
-	if (!doesFileExist(_updaterFullPath.c_str()))
+	if (!NppParameters::getInstance().isLocal() || !SecurityGuard::checkLitePluginTool(_updaterFullPath))
 	{
 		return false;
 	}
@@ -825,9 +823,6 @@ bool PluginsAdminDlg::initFromJson()
 	if (!isSecured)
 		return false;
 
-	isSecured = securityGuard.checkModule(_updaterFullPath, nm_gup);
-
-	if (isSecured)
 	{
 		HMODULE hLib = NULL;
 		hLib = ::LoadLibraryEx(_pluginListFullPath.c_str(), 0, LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE);
@@ -892,11 +887,7 @@ bool PluginsAdminDlg::updateList()
 
 bool PluginsAdminDlg::initAvailablePluginsViewFromList()
 {
-	wchar_t nppFullPathName[MAX_PATH]{};
-	GetModuleFileName(NULL, nppFullPathName, MAX_PATH);
-
-	Version nppVer;
-	nppVer.setVersionFrom(nppFullPathName);
+	const Version nppVer(NPP_COMPAT_VERSION);
 
 	for (const auto& i : _availableList._list)
 	{
@@ -921,11 +912,7 @@ bool PluginsAdminDlg::initAvailablePluginsViewFromList()
 
 bool PluginsAdminDlg::initIncompatiblePluginList()
 {
-	wchar_t nppFullPathName[MAX_PATH]{};
-	GetModuleFileName(NULL, nppFullPathName, MAX_PATH);
-
-	Version nppVer;
-	nppVer.setVersionFrom(nppFullPathName);
+	const Version nppVer(NPP_COMPAT_VERSION);
 
 	for (const auto& i : _incompatibleList._list)
 	{

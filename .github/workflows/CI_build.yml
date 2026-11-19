@@ -13,6 +13,8 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
       - name: Prepare official Chinese UI and native Markdown defaults
         run: python deploy/prepare-ui-assets.py
+      - name: Build portable plugin manager helper and stage official catalog
+        run: python deploy/build-plugin-tool.py
       - name: Build native x64 editor
         run: msbuild PowerEditor/visual.net/notepadPlus.sln /m /p:Configuration=Release /p:Platform=x64 /p:RunCodeAnalysis=false /v:minimal
       - name: Build native plugin ABI probe
@@ -59,6 +61,9 @@ jobs:
           Copy-Item $exe.FullName dist/npp-lite.exe
           Copy-Item $exe.FullName dist/portable/npp-lite.exe
           Copy-Item PowerEditor/bin64/plugins/NppMarkdownPanel dist/portable/plugins/ -Recurse
+          Copy-Item PowerEditor/bin64/plugins/Config/nppPluginList.dll dist/portable/plugins/Config/
+          Copy-Item PowerEditor/bin64/updater dist/portable/ -Recurse
+          Copy-Item PowerEditor/src/Lite/generated/stylers.xml,PowerEditor/src/Lite/generated/userDefineLang.xml,PowerEditor/src/Lite/generated/nativeLang.xml,PowerEditor/src/Lite/config.xml dist/portable/
           "[Options]`nAutoShowPanel=1`nSupportFilesWithNoExt=1`nShowToolbar=0`nShowStatusbar=0`nZoomLevel=100`nRenderingEngine=EDGE" | Set-Content -Encoding ascii dist/portable/plugins/Config/NppMarkdownPanel.ini
           New-Item -ItemType File dist/portable/doLocalConf.xml | Out-Null
           Copy-Item LICENSE dist/portable/LICENSE.txt
@@ -70,7 +75,8 @@ jobs:
           $hash = (Get-FileHash dist/npp-lite.exe -Algorithm SHA256).Hash.ToLower()
           $zipHash = (Get-FileHash dist/npp-lite-x64-portable.zip -Algorithm SHA256).Hash.ToLower()
           @("$hash  npp-lite.exe", "$zipHash  npp-lite-x64-portable.zip") | Set-Content -Encoding ascii dist/SHA256SUMS.txt
-          @{project='Npp Lite';version='1.2.1';commit=$env:GITHUB_SHA;upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13';build='GitHub Actions windows-2025 MSVC Release x64';bytes=$exe.Length;sha256=$hash;portableSha256=$zipHash;packed=$false;retiredCommands=80;retiredPreferenceControls=98;retainedPreferencePages=14;defaultLanguage='Markdown';defaultFont='SimSun';defaultFontSize=11;interfaceLanguage='zh-CN';hostToolbarButtons=8;toolbarIconLogical=21;toolbarButtonLogical='32x30';toolbarGroupGapLogical=12;plugin='Markdown Panel 0.9.3 x64';run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
+          $settings = Get-Content PowerEditor/src/Lite/generated/settings-manifest.json -Raw | ConvertFrom-Json
+          @{project='Npp Lite';version='1.3.0';commit=$env:GITHUB_SHA;upstream='67eca422e60a169801a9aaeb19e285b7f27cfd13';build='GitHub Actions windows-2025 MSVC Release x64';bytes=$exe.Length;sha256=$hash;portableSha256=$zipHash;packed=$false;retiredCommands=80;retiredPreferenceControls=$settings.retiredInteractiveControls;retainedPreferencePages=$settings.retainedPages;defaultLanguage='Markdown';defaultFont='SimSun';defaultFontSize=11;lightPaper=$settings.lightPaper;interfaceLanguage='zh-CN';hostToolbarButtons=8;toolbarIconLogical=21;toolbarButtonLogical='32x30';toolbarGroupGapLogical=12;plugin='Markdown Panel 0.9.3 x64';pluginsAdmin='WinGUp 5.4.3 (Lite plugin-only build)';run="https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-Json | Set-Content -Encoding utf8 dist/build-receipt.json
           Copy-Item test-output/smoke.json dist/
           Copy-Item test-output-dark/smoke.json dist/smoke-dark.json
           Copy-Item test-output/preferences.json dist/

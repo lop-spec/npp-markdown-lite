@@ -4,7 +4,7 @@
 namespace Lite
 {
 // Original upstream page indices remain stable for plugin/internal links.
-inline constexpr int settingsPageOrder[] = {0, 2, 3, 5, 6, 7, 8, 9, 12, 15, 16, 17, 20, 23};
+inline constexpr int settingsPageOrder[] = {0, 2, 3, 5, 6, 7, 8, 9, 12, 13, 15, 16, 17, 20, 23};
 inline bool isSettingsPageRetained(size_t original)
 {
 	for (const int page : settingsPageOrder) if (static_cast<size_t>(page) == original) return true;
