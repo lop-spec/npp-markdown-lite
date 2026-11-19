@@ -195,7 +195,7 @@ try:
     inspect(u.GetMenu(main), True)
     check(len(labels) == 13 and not any('Markdown' in label for label in labels), 'no built-in Markdown top menu')
     if os.environ.get('LITE_DARK') != '1':
-        preferences_tests['verify_find_and_admin'](context, sci, items, set_text)
+        preference_tests['verify_find_and_admin'](context, sci, items, set_text)
     ids = {item_id for _, item_id in items}
     retired = re.findall(r'^\s*(IDM_\w+)', (root / 'PowerEditor/src/Lite/RetiredCommands.h').read_text(encoding='utf-8'), re.M)
     check(len(retired) == 80 and len(set(retired)) == 80, '80 additional native commands uniquely enumerated')

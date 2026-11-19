@@ -95,6 +95,9 @@ jobs:
             test-output/*
             test-output-dark/*
             PowerEditor/bin64/npp-lite.exe
+            PowerEditor/bin64/doLocalConf.xml
+            PowerEditor/bin64/updater/
+            PowerEditor/bin64/plugins/Config/nppPluginList.dll
       - uses: actions/upload-artifact@v4
         with:
           name: npp-lite-x64

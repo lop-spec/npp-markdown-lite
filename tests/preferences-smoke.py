@@ -168,9 +168,16 @@ def verify_find_and_admin(context, sci, items, set_text):
     send(find, 0x111, 2)
     check(any(i == 48015 and '插件管理' in name for name, i in items), 'native Chinese Plugins Admin menu is present')
     send(main, 0x111, 48015)
-    admin = visible_with(5506)
-    available = u.GetDlgItem(admin, 5506)
-    count = send(available, 0x1004)  # LVM_GETITEMCOUNT
+    admin = visible_with(5502)  # search box, unique to the dialog
+    deadline = time.monotonic() + 5
+    count = 0
+    while time.monotonic() < deadline:
+        available = next((h for h, name in windows(pid, admin) if name == 'SysListView32' and u.IsWindowVisible(h)), None)
+        if available:
+            count = send(available, 0x1004)  # LVM_GETITEMCOUNT
+            if count > 0:
+                break
+        time.sleep(.05)
     check(count > 30, 'native Plugins Admin lists compatible catalog items')
     (out/'plugins-admin.json').write_text(json.dumps({'availableCount':count}),encoding='utf-8')
     send(admin, 0x111, 1)
