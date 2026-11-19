@@ -20,7 +20,22 @@ def verify(context):
         text=C.create_unicode_buffer(4096)
         send(hwnd,0x148 if combo else 0x189,index,C.addressof(text))
         return text.value
-    send(main,0x111,48011)
+    # Validate the compiled resource before opening the dialog, so a missing
+    # template fails immediately rather than waiting on the native error box.
+    kernel = C.WinDLL('kernel32', use_last_error=True)
+    kernel.LoadLibraryExW.argtypes = [W.LPCWSTR, W.HANDLE, W.DWORD]
+    kernel.LoadLibraryExW.restype = W.HMODULE
+    kernel.FindResourceW.argtypes = [W.HMODULE, C.c_void_p, C.c_void_p]
+    kernel.FindResourceW.restype = W.HANDLE
+    kernel.FreeLibrary.argtypes = [W.HMODULE]
+    import sys
+    module = kernel.LoadLibraryExW(sys.argv[1], None, 2)  # LOAD_LIBRARY_AS_DATAFILE
+    check(bool(module), 'can read compiled editor resources')
+    try:
+        check(bool(kernel.FindResourceW(module, 6550, 5)), 'native Highlighting dialog template compiled into editor')
+    finally:
+        kernel.FreeLibrary(module)
+    u.PostMessageW(main,0x111,48011,0)
     deadline=time.monotonic()+10
     preferences=None
     while time.monotonic()<deadline:
