@@ -162,6 +162,18 @@ try:
         check([send(sci, 'SCI_GETSTYLEAT', i) for i in range(len(sample))] == original_styles, f'{filename} has identical native Markdown styles')
         check(hashlib.sha256(plain.read_bytes()).hexdigest() == before, f'{filename} original bytes unchanged')
         command('IDM_FILE_CLOSE')
+    import xml.etree.ElementTree as ET
+    legacy = work/'legacy-session.xml'
+    tree = ET.Element('NotepadPlus')
+    session = ET.SubElement(tree, 'Session', activeView='0')
+    tabs = ET.SubElement(session, 'mainView', activeIndex='0')
+    ET.SubElement(tabs, 'File', filename=str(work/'sample.txt'), lang='Normal Text', encoding='-1')
+    ET.SubElement(session, 'subView', activeIndex='0')
+    ET.ElementTree(tree).write(legacy, encoding='utf-8', xml_declaration=True)
+    npp_load_session = 1024 + 1000 + 34  # NPPM_LOADSESSION
+    pointer_message(main, npp_load_session, (str(legacy)+'\0').encode('utf-16-le'))
+    check(text() == sample and send(sci, 'SCI_GETLEXER') == 152, 'legacy normal-text session restores with Markdown styling')
+    command('IDM_FILE_CLOSE')
     command('IDM_FILE_NEW')
     check(send(sci,'SCI_GETLEXER')==152 and send(sci,'SCI_GETTEXTLENGTH')==0,'new documents default to native Markdown')
     command('IDM_FILE_CLOSE')

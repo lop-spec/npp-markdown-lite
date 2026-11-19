@@ -2491,6 +2491,18 @@ void Notepad_plus::loadLastSession()
 	_isFolding = false;
 }
 
+// A legacy plain-text session entry must not undo automatic Markdown detection.
+static void restoreSessionLanguage(Buffer& buffer, LangType storedType, const wchar_t* storedName)
+{
+	if (storedType == L_TEXT && buffer.getLangType() == L_USER)
+	{
+		const wchar_t* detected = buffer.getUserDefineLangName();
+		if (wcscmp(detected, L"Markdown") == 0 || wcscmp(detected, L"Markdown（深色）") == 0)
+			return;
+	}
+	buffer.setLangType(storedType, storedName);
+}
+
 bool Notepad_plus::loadSession(Session & session, bool isSnapshotMode, const wchar_t* userCreatedSessionName)
 {
 	NppParameters& nppParam = NppParameters::getInstance();
@@ -2603,7 +2615,7 @@ bool Notepad_plus::loadSession(Session & session, bool isSnapshotMode, const wch
 
 			buf->setPosition(session._mainViewFiles[i], &_mainEditView);
 			buf->setMapPosition(session._mainViewFiles[i]._mapPos);
-			buf->setLangType(langTypeToSet, pLn);
+			restoreSessionLanguage(*buf, langTypeToSet, pLn);
 			if (session._mainViewFiles[i]._encoding != -1)
 				buf->setEncoding(session._mainViewFiles[i]._encoding);
 
@@ -2748,7 +2760,7 @@ bool Notepad_plus::loadSession(Session & session, bool isSnapshotMode, const wch
 					pLn = L"";	//default user defined
 				}
 			}
-			buf->setLangType(typeToSet, pLn);
+			restoreSessionLanguage(*buf, typeToSet, pLn);
 			buf->setEncoding(session._subViewFiles[k]._encoding);
 			buf->setUserReadOnly(session._subViewFiles[k]._isUserReadOnly || nppGUI._isFullReadOnly || nppGUI._isFullReadOnlySavingForbidden);
 			buf->setPinned(session._subViewFiles[k]._isPinned);
